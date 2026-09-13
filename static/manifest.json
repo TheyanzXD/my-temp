@@ -1,0 +1,17 @@
+{
+	"name": "TempMail",
+	"short_name": "TempMail",
+	"description": "Create a temporary email inbox instantly. No registration required.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#09090b",
+	"theme_color": "#09090b",
+	"icons": [
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}
