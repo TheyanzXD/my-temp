@@ -1,271 +1,244 @@
 <div align="center">
 
-# ⚡ KYZZ TEMP
-### *Modern, Ultra-Fast & Minimalist Temporary Email Engine*
+# ⚡ Kyzz Temp
 
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=open-source-initiative&logoColor=white)](LICENSE)
-[![SvelteKit](https://img.shields.io/badge/SvelteKit_2-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript_5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Ready-success?style=for-the-badge&logo=pwa&logoColor=white)](#)
+**High-Performance, Modern & Secure Disposable Temporary Email Service**
 
-<p align="center">
-  <b>Minimalist White Theme • Real-time SSE • Sandboxed Security • 5 Pluggable Mail Engines • Zero Logging</b>
-</p>
+[![SvelteKit 2](https://img.shields.io/badge/SvelteKit-2.0-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
+[![Svelte 5](https://img.shields.io/badge/Svelte-5%20Runes-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev/)
+[![TailwindCSS v4](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Bun](https://img.shields.io/badge/Runtime-Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-```
-  ┌──────────────────────────────────────────────────────────────┐
-  │   📬  KYZZ TEMP INBOX :  swift.user8291@quickmail.dev        │
-  │   🟢  STATUS          :  Live Server-Sent Events (SSE)       │
-  │   ⏳  EXPIRATION      :  Self-destruct in 60 minutes          │
-  └──────────────────────────────────────────────────────────────┘
-```
+*Instant disposable mailboxes, real-time message streaming via Server-Sent Events (SSE), XSS protection sanitizer, multi-provider architecture, and minimalist modern UI.*
+
+---
 
 </div>
 
----
+## ✨ Key Features
 
-## 📖 Daftar Isi
-1. [Fitur Utama](#-fitur-utama)
-2. [Persyaratan Sistem](#-persyaratan-sistem)
-3. [Panduan Instalasi & Menjalankan](#-panduan-instalasi--menjalankan)
-4. [Konfigurasi Environment (.env)](#-konfigurasi-environment-env)
-5. [Panduan Setup 5 Provider Email](#-panduan-setup-5-provider-email)
-6. [Menghubungkan Domain Sendiri](#-menghubungkan-domain-sendiri)
-7. [Deploy ke Server / VPS](#-deploy-ke-server--vps)
-8. [Dokumentasi REST API](#-dokumentasi-rest-api)
-9. [Lisensi](#-lisensi)
-
----
-
-## ✨ Fitur Utama
-
-- ⚡ **Realtime Server-Sent Events (SSE)** — Notifikasi email masuk otomatis tanpa perlu reload atau polling berat.
-- 🎨 **Clean Minimalist Design** — Tampilan modern, bersih (*white minimalist*), responsif di mobile & desktop, serta dark mode toggle.
-- 🛡️ **Email Sandbox & Sanitizer** — Stripping script berbahaya, proteksi XSS (`sanitize-html`), dan link scanner.
-- ⏱️ **Auto Self-Destruct** — Kotak masuk dan riwayat email otomatis terhapus setelah 60 menit.
-- 🌐 **Side Domain Pool** — Ganti domain secara instan dalam 1-klik di samping inbox.
-- 🔌 **5 Provider Engine Siap Pakai** — Mendukung Mail.gw, MailSlurp, Cloudflare Email Routing, ForwardEmail, dan ImprovMX.
+- ⚡ **Instant Mailbox Generation** — Generate random addresses or custom user aliases in milliseconds.
+- 🔄 **Real-Time Inbox Streaming (SSE)** — Zero-refresh inbox powered by lightweight Server-Sent Events with automatic reconnection.
+- 🎨 **Minimalist Clean UI** — Pure modern white aesthetic, responsive mobile navigation drawer, and seamless UX.
+- 🛡️ **Built-in Security & Privacy** — Strict HTML sanitization (`sanitize-html`), sandbox email body rendering, CSP policies, and IP rate limiting.
+- 🔌 **Multi-Provider Mail Architecture**:
+  - **Mail.gw / Mail.tm API** (Public zero-config backend with dynamic domain pooling)
+  - **Custom Webhook Inbound** (Cloudflare Email Routing, ImprovMX, ForwardEmail, SendGrid)
+  - **MailSlurp API** (Enterprise inbox provider)
+  - **Interactive Mock Provider** (For local testing & offline development)
+- 🚀 **Developer REST API** — Public endpoints to create mailboxes, list messages, stream SSE updates, and receive webhooks.
 
 ---
 
-## 💻 Persyaratan Sistem
+## 🏗️ Tech Stack
 
-- **Runtime**: [Bun](https://bun.sh) (v1.1+) atau Node.js (v20+)
-- **OS**: Linux (Ubuntu/Debian/CentOS), macOS, atau Windows (WSL)
+- **Framework**: [SvelteKit 2](https://kit.svelte.dev/) + [Svelte 5 Runes](https://svelte.dev/) (`$state`, `$derived`, `$effect`)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Runtime & Package Manager**: [Bun](https://bun.sh/)
+- **Security**: [sanitize-html](https://www.npmjs.com/package/sanitize-html), DOMPurify sanitization rules
+- **Icons**: [Lucide Icons](https://lucide.dev/)
 
 ---
 
-## 🚀 Panduan Instalasi & Menjalankan
+## 🚀 Quick Start
 
-### 1. Clone Repositori
+### Prerequisites
+
+- [Bun](https://bun.sh/) installed on your machine (`curl -fsSL https://bun.sh/install | bash`)
+- [Node.js](https://nodejs.org/) (optional, Bun is recommended)
+
+### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/kyzz-temp.git
+git clone https://github.com/KyuuX444/kyzz-temp.git
 cd kyzz-temp
-```
-
-### 2. Install Dependensi
-
-Menggunakan Bun (Sangat Direkomendasikan):
-```bash
 bun install
 ```
-*(Atau `npm install` jika menggunakan Node.js)*
 
-### 3. Siapkan File `.env`
+### 2. Configure Environment
 
-Salin contoh konfigurasi bawaan:
+Copy the example environment file:
+
 ```bash
 cp .env.example .env
 ```
 
-### 4. Jalankan Mode Development
+Edit `.env` according to your preferred configuration:
 
-```bash
-# Buka di localhost
-bun run dev
+```ini
+# Server Configuration
+PORT=3000
+HOST=0.0.0.0
 
-# Atau buka ke jaringan lokal / LAN
-bun run dev -- --host 0.0.0.0 --port 3000
-```
-Buka browser Anda di 👉 **http://localhost:3000**
-
----
-
-## ⚙️ Konfigurasi Environment (`.env`)
-
-Isi file [`.env`](.env) sesuai kebutuhan engine Anda:
-
-```env
-# Pilihan Provider: mailgw | mailslurp | cloudflare | forwardemail | improvmx | mock
+# Mail Provider Selection: 'mailgw' | 'mailslurp' | 'webhook' | 'mock'
 MAIL_PROVIDER=mailgw
 
-# Kredensial MailSlurp (hanya jika MAIL_PROVIDER=mailslurp)
-MAIL_API_URL=https://api.mailslurp.com
-MAIL_API_KEY=
+# MailSlurp API Key (Only required if MAIL_PROVIDER=mailslurp)
+# MAILSLURP_API_KEY=your_mailslurp_api_key_here
 
-# Daftar domain sendiri (pisahkan dengan koma jika lebih dari satu)
-CUSTOM_DOMAINS=domainkamu.com,mail.domainkamu.com
+# Webhook Secret Token (Only required if MAIL_PROVIDER=webhook)
+# WEBHOOK_SECRET=your_webhook_secret_here
 
-# Pengaturan Aplikasi & Keamanan
-APP_NAME=Kyzz Temp
-APP_URL=http://localhost:3000
-MAILBOX_LIFETIME_MINUTES=60
-MAX_REQUESTS_PER_MINUTE=120
-CORS_ALLOWED_ORIGINS=*
+# Rate Limiter Configuration (requests per minute per IP)
+RATE_LIMIT_MAX=60
+RATE_LIMIT_WINDOW_MS=60000
 ```
 
----
+### 3. Run Development Server
 
-## 📬 Panduan Setup 5 Provider Email
-
-### 1. Provider `mailgw` (100% Gratis & Otomatis)
-Tidak memerlukan domain sendiri. Menggunakan API publik Mail.tm / Mail.gw yang otomatis menyediakan email gratis aktif.
-- Set di `.env`: `MAIL_PROVIDER=mailgw`
-
-### 2. Provider `cloudflare` (Domain Sendiri via Cloudflare Email Routing)
-1. Aktifkan **Email Routing** di domain Cloudflare Anda.
-2. Buat Rule **Catch-all** -> Kirim ke **Cloudflare Worker**.
-3. Di Cloudflare Worker, teruskan payload email ke webhook aplikasi:
-   ```javascript
-   export default {
-     async email(message, env, ctx) {
-       const rawEmail = await new Response(message.raw).text();
-       await fetch("https://domain-kamu.com/api/webhook/inbound", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-           to: message.to,
-           from: message.from,
-           subject: message.headers.get("subject") || "(No Subject)",
-           text: rawEmail
-         })
-       });
-     }
-   };
-   ```
-4. Set di `.env`:
-   ```env
-   MAIL_PROVIDER=cloudflare
-   CUSTOM_DOMAINS=domainkamu.com
-   ```
-
-### 3. Provider `improvmx` (Forwarding Gratis 2-Menit)
-1. Daftarkan domain di [ImprovMX.com](https://improvmx.com).
-2. Tambahkan DNS MX records ke registrar domain Anda:
-   - `MX priority 10 -> mx1.improvmx.com`
-   - `MX priority 20 -> mx2.improvmx.com`
-3. Masukkan Webhook URL di dashboard ImprovMX:
-   `https://domain-kamu.com/api/webhook/inbound`
-4. Set di `.env`:
-   ```env
-   MAIL_PROVIDER=improvmx
-   CUSTOM_DOMAINS=domainkamu.com
-   ```
-
-### 4. Provider `forwardemail` (Open Source & Encrypted)
-1. Tambahkan domain di [ForwardEmail.net](https://forwardemail.net).
-2. Arahkan webhook masuk ke `https://domain-kamu.com/api/webhook/inbound`.
-3. Set di `.env`:
-   ```env
-   MAIL_PROVIDER=forwardemail
-   CUSTOM_DOMAINS=domainkamu.com
-   ```
-
-### 5. Provider `mock` (Pengujian Lokal / Simulator)
-Menyediakan simulator email masuk otomatis (verifikasi GitHub & receipt Stripe) tanpa koneksi internet.
-- Set di `.env`: `MAIL_PROVIDER=mock`
-
----
-
-## 🌐 Menghubungkan Domain Sendiri ke Website
-
-### Opsi A: Menggunakan Cloudflare Tunnel (Paling Mudah & Gratis SSL)
 ```bash
-# 1. Install cloudflared di VPS
-curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared.deb
-
-# 2. Hubungkan ke port lokal 3000
-cloudflared tunnel --url http://127.0.0.1:3000
+bun run dev
 ```
 
-### Opsi B: Menggunakan Nginx Reverse Proxy
-Konfigurasi file `/etc/nginx/sites-available/tempmail`:
-```nginx
-server {
-    server_name tempmail.domainkamu.com;
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-Lalu pasang SSL gratis:
-```bash
-certbot --nginx -d tempmail.domainkamu.com
-```
+### 4. Build for Production
 
----
-
-## 🚢 Deploy ke Server / VPS
-
-### 1. Build Proyek Produksi
 ```bash
 bun run build
-```
-
-### 2. Jalankan dengan PM2 (Background Daemon)
-```bash
-npm install -g pm2
-pm2 start build/index.js --name "kyzz-temp" --env PORT=3000 HOST=0.0.0.0
-pm2 save
-pm2 startup
-```
-
-### 3. Perintah Standar Proyek
-```bash
-# Validasi Type & Svelte
-bun run check
-
-# Preview build produksi
 bun run preview
 ```
 
 ---
 
-## 🔌 Dokumentasi REST API
+## 📡 REST API Documentation
 
-| Method | Endpoint | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/domains` | Mengambil daftar domain aktif |
-| `POST` | `/api/mailbox` | Membuat kotak masuk email baru |
-| `GET` | `/api/mailbox/:address` | Mengecek status & masa berlaku inbox |
-| `GET` | `/api/mailbox/:address/messages` | Mengambil daftar email masuk |
-| `GET` | `/api/mailbox/:address/messages/:id` | Mengambil isi & HTML email tersanitasi |
-| `DELETE` | `/api/mailbox/:address` | Menghapus kotak masuk seketika |
-| `POST` | `/api/webhook/inbound` | Endpoint Webhook penerima email masuk |
+Kyzz Temp provides clean REST API endpoints for external integrations:
 
-### Contoh Request Pembuatan Inbox (cURL)
-```bash
-curl -X POST http://localhost:3000/api/mailbox \
-  -H "Content-Type: application/json" \
-  -d '{"username": "tester", "domain": "domainkamu.com"}'
+### 1. Generate Mailbox
+`POST /api/mailbox`
+
+**Request Body (Optional for custom alias):**
+```json
+{
+  "username": "customname",
+  "domain": "example.com"
+}
+```
+
+**Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "mailbox": {
+    "address": "customname@example.com",
+    "token": "auth_token_here",
+    "createdAt": "2026-09-13T21:00:00.000Z",
+    "expiresAt": "2026-09-13T22:00:00.000Z"
+  }
+}
 ```
 
 ---
 
-## 📄 Lisensi
+### 2. Fetch Inbox Messages
+`GET /api/mailbox/:address/messages`
 
-Didistribusikan di bawah lisensi **MIT License**. Lihat file [`LICENSE`](LICENSE) untuk informasi lebih lanjut.
+**Headers:**
+`Authorization: Bearer <token>` (if required by provider)
+
+**Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "messages": [
+    {
+      "id": "msg_123",
+      "from": { "name": "Google", "address": "no-reply@accounts.google.com" },
+      "subject": "Security verification code: 492019",
+      "intro": "Your verification code is 492019...",
+      "createdAt": "2026-09-13T21:05:00.000Z",
+      "isRead": false
+    }
+  ]
+}
+```
+
+---
+
+### 3. Read Single Email
+`GET /api/mailbox/:address/messages/:id`
+
+**Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": {
+    "id": "msg_123",
+    "from": { "name": "Google", "address": "no-reply@accounts.google.com" },
+    "to": [{ "address": "user@domain.com" }],
+    "subject": "Security verification code: 492019",
+    "html": "<p>Your code is <b>492019</b></p>",
+    "text": "Your code is 492019",
+    "createdAt": "2026-09-13T21:05:00.000Z",
+    "attachments": []
+  }
+}
+```
+
+---
+
+### 4. Real-time Events Stream (SSE)
+`GET /api/mailbox/:address/events`
+
+Receives live updates whenever a new email arrives in the mailbox:
+```text
+event: connected
+data: {"status":"connected","address":"user@domain.com"}
+
+event: new_message
+data: {"id":"msg_123","subject":"Welcome!","from":"service@mail.com"}
+```
+
+---
+
+### 5. Inbound Webhook Endpoint
+`POST /api/webhook/inbound`
+
+Configurable endpoint to receive raw incoming emails from Cloudflare Workers, ImprovMX, or ForwardEmail.
+
+---
+
+## 📂 Project Structure
+
+```text
+kyzz-temp/
+├── src/
+│   ├── lib/
+│   │   ├── components/       # Svelte UI Components (Navbar, Generator, Inbox, Viewer)
+│   │   ├── server/
+│   │   │   ├── mail/         # Multi-provider mail engines (MailGW, MailSlurp, Webhook)
+│   │   │   └── security/     # HTML Sanitizer, Rate limiter, Security headers
+│   │   ├── stores/           # Svelte 5 reactive stores
+│   │   └── utils/            # Helper functions & formatters
+│   ├── routes/
+│   │   ├── api/              # REST Endpoints (Mailbox, Messages, SSE, Webhook)
+│   │   ├── api-docs/         # Interactive API Documentation page
+│   │   ├── faq/              # Frequently Asked Questions
+│   │   ├── privacy/          # Privacy Policy
+│   │   ├── +layout.svelte    # Global layout & toast container
+│   │   └── +page.svelte      # Main application dashboard
+├── static/                   # Favicons, Manifest & Service Workers
+├── package.json
+├── README.md
+└── tsconfig.json
+```
+
+---
+
+## 🔒 Security Best Practices
+
+- All rendered email HTML content is sanitized using strict server-side rules preventing script execution and CSS-based phishing.
+- Built-in In-Memory sliding-window rate limiting per IP.
+- Zero persistent logging of confidential email contents.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 <div align="center">
-  <sub>Developed with ❤️ for privacy and developer productivity.</sub>
+  <b>Built with ❤️ by <a href="https://github.com/KyuuX444">KyuuX444</a></b>
 </div>
