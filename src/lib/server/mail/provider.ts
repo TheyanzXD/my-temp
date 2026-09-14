@@ -9,7 +9,7 @@ let cachedProvider: MailProvider | null = null;
 export function getMailProvider(platform?: App.Platform): MailProvider {
 	if (!cachedProvider) {
 		const providerType = (platform?.env?.MAIL_PROVIDER || 'mock').toLowerCase();
-		const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.web.id')
+		const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yoai.my.id')
 			.split(',')
 			.map((d) => d.trim())
 			.filter(Boolean);
