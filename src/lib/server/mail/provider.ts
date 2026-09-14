@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/private';
 import type { MailProvider } from './types';
 import { MockMailProvider } from './mock-provider';
 import { MailSlurpProvider } from './mailslurp-provider';
@@ -7,49 +6,51 @@ import { WebhookMailProvider } from './webhook-provider';
 
 let cachedProvider: MailProvider | null = null;
 
-export function getMailProvider(): MailProvider {
-	if (cachedProvider) {
-		return cachedProvider;
+export function getMailProvider(platform?: App.Platform): MailProvider {
+	if (!cachedProvider) {
+		const providerType = (platform?.env?.MAIL_PROVIDER || 'mock').toLowerCase();
+		const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.web.id')
+			.split(',')
+			.map((d) => d.trim())
+			.filter(Boolean);
+
+		switch (providerType) {
+			case 'mailgw':
+			case 'mailtm':
+				cachedProvider = new MailGwProvider();
+				break;
+
+			case 'mailslurp': {
+				const apiKey = platform?.env?.MAIL_API_KEY;
+				if (!apiKey) {
+					console.warn('⚠️ MAIL_API_KEY is not set for mailslurp provider. Falling back to WebhookMailProvider.');
+					cachedProvider = new WebhookMailProvider('Webhook (mailslurp fallback)', customDomains);
+				} else {
+					cachedProvider = new MailSlurpProvider(apiKey, platform?.env?.MAIL_API_URL);
+				}
+				break;
+			}
+
+			case 'cloudflare':
+			case 'cloudflare_workers':
+			case 'webhook':
+			case 'improvmx':
+			case 'forwardemail':
+				cachedProvider = new WebhookMailProvider('Cloudflare Email Routing / Webhook', customDomains);
+				break;
+
+			case 'mock':
+			default:
+				cachedProvider = new MockMailProvider();
+				break;
+		}
 	}
 
-	const providerType = (env.MAIL_PROVIDER || 'mock').toLowerCase();
-	const customDomains = (env.CUSTOM_DOMAINS || 'mycustomdomain.com')
-		.split(',')
-		.map((d) => d.trim())
-		.filter(Boolean);
-
-	switch (providerType) {
-		case 'mailgw':
-		case 'mailtm':
-			cachedProvider = new MailGwProvider();
-			break;
-
-		case 'mailslurp':
-			if (!env.MAIL_API_KEY) {
-				console.warn('⚠️ MAIL_API_KEY is not set for mailslurp provider. Falling back to MockMailProvider.');
-				cachedProvider = new MockMailProvider();
-			} else {
-				cachedProvider = new MailSlurpProvider(env.MAIL_API_KEY, env.MAIL_API_URL);
-			}
-			break;
-
-		case 'cloudflare':
-		case 'cloudflare_workers':
-			cachedProvider = new WebhookMailProvider('Cloudflare Email Routing', customDomains);
-			break;
-
-		case 'forwardemail':
-			cachedProvider = new WebhookMailProvider('Forward Email Webhook', customDomains);
-			break;
-
-		case 'improvmx':
-			cachedProvider = new WebhookMailProvider('ImprovMX Webhook', customDomains);
-			break;
-
-		case 'mock':
-		default:
-			cachedProvider = new MockMailProvider();
-			break;
+	// Per-call: bind platform so KV-backed providers can read bindings.
+	// Providers that don't need platform simply ignore the call.
+	const maybeBind = cachedProvider as unknown as { bind?: (p: App.Platform | undefined) => void };
+	if (typeof maybeBind.bind === 'function') {
+		maybeBind.bind(platform);
 	}
 
 	return cachedProvider;

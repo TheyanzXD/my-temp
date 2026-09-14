@@ -1,0 +1,31 @@
+name = "my-temp"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# KV bindings used by the app at runtime.
+# IDs below are placeholders; replace with real IDs from `wrangler kv namespace create`.
+# To bootstrap locally:
+#   wrangler kv namespace create MAILBOX_STORE
+#   wrangler kv namespace create MAILBOX_STORE --preview
+#   wrangler kv namespace create RATE_LIMIT
+#   wrangler kv namespace create RATE_LIMIT --preview
+[[kv_namespaces]]
+binding = "MAILBOX_STORE"
+id = "replace_with_mailbox_store_id"
+preview_id = "replace_with_mailbox_store_preview_id"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "replace_with_rate_limit_id"
+preview_id = "replace_with_rate_limit_preview_id"
+
+# Default public environment variables (non-secret).
+[vars]
+MAIL_PROVIDER = "webhook"
+CUSTOM_DOMAINS = "yaoi.web.id"
+APP_NAME = "MyTemp"
+APP_URL = "https://yaoi.web.id"
+MAILBOX_LIFETIME_MINUTES = "60"
+MAX_REQUESTS_PER_MINUTE = "120"
+CORS_ALLOWED_ORIGINS = "*"

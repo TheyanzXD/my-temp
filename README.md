@@ -1,244 +1,211 @@
-<div align="center">
+# ⚡ MyTemp
+**High-Performance Disposable Temporary Email Service — Cloudflare Pages Edition**
 
-# ⚡ Kyzz Temp
+Fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp) re-architected to deploy as a serverless application on **Cloudflare Pages** with state stored in **Cloudflare KV**. No private servers, no Docker, no Node host.
 
-**High-Performance, Modern & Secure Disposable Temporary Email Service**
+## What's Different From the Original
 
-[![SvelteKit 2](https://img.shields.io/badge/SvelteKit-2.0-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-[![Svelte 5](https://img.shields.io/badge/Svelte-5%20Runes-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev/)
-[![TailwindCSS v4](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Bun](https://img.shields.io/badge/Runtime-Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+| Area | Original | This Fork |
+|---|---|---|
+| Adapter | `@sveltejs/adapter-node` | `@sveltejs/adapter-cloudflare` |
+| State (mailboxes/messages) | In-memory `Map` (lost on restart) | **Cloudflare KV** (persistent, edge-replicated) |
+| Rate limiter | In-memory sliding window | **Cloudflare KV** sliding window |
+| Inbound email | Generic webhook receiver | Webhook + Cloudflare Email Routing ready (`yaoi.web.id`) |
+| Domain | Demo domains only | Defaults to your custom domain (e.g. `yaoi.web.id`) |
+| Deployment | Node server / Docker | `wrangler pages deploy` (one command) |
+| SSE inbox streaming | Works on Node | Works on Pages Functions (with the standard caveats for free plan) |
 
-*Instant disposable mailboxes, real-time message streaming via Server-Sent Events (SSE), XSS protection sanitizer, multi-provider architecture, and minimalist modern UI.*
+## Tech Stack
 
----
-
-</div>
-
-## ✨ Key Features
-
-- ⚡ **Instant Mailbox Generation** — Generate random addresses or custom user aliases in milliseconds.
-- 🔄 **Real-Time Inbox Streaming (SSE)** — Zero-refresh inbox powered by lightweight Server-Sent Events with automatic reconnection.
-- 🎨 **Minimalist Clean UI** — Pure modern white aesthetic, responsive mobile navigation drawer, and seamless UX.
-- 🛡️ **Built-in Security & Privacy** — Strict HTML sanitization (`sanitize-html`), sandbox email body rendering, CSP policies, and IP rate limiting.
-- 🔌 **Multi-Provider Mail Architecture**:
-  - **Mail.gw / Mail.tm API** (Public zero-config backend with dynamic domain pooling)
-  - **Custom Webhook Inbound** (Cloudflare Email Routing, ImprovMX, ForwardEmail, SendGrid)
-  - **MailSlurp API** (Enterprise inbox provider)
-  - **Interactive Mock Provider** (For local testing & offline development)
-- 🚀 **Developer REST API** — Public endpoints to create mailboxes, list messages, stream SSE updates, and receive webhooks.
-
----
-
-## 🏗️ Tech Stack
-
-- **Framework**: [SvelteKit 2](https://kit.svelte.dev/) + [Svelte 5 Runes](https://svelte.dev/) (`$state`, `$derived`, `$effect`)
+- **Framework**: [SvelteKit 2](https://kit.svelte.dev/) + [Svelte 5 Runes](https://svelte.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **Runtime & Package Manager**: [Bun](https://bun.sh/)
-- **Security**: [sanitize-html](https://www.npmjs.com/package/sanitize-html), DOMPurify sanitization rules
-- **Icons**: [Lucide Icons](https://lucide.dev/)
+- **Adapter**: [`@sveltejs/adapter-cloudflare`](https://kit.svelte.dev/docs/adapter-cloudflare)
+- **Runtime**: Cloudflare Workers (via Pages Functions)
+- **Storage**: Cloudflare KV (mailboxes, messages, rate-limit)
+- **Security**: `sanitize-html`, strict CSP headers, per-IP KV-backed rate limiting
 
----
+## Prerequisites
 
-## 🚀 Quick Start
+- A Cloudflare account (free tier works)
+- `wrangler` CLI: `npm install -g wrangler`
+- (Optional) A custom domain you own, added to Cloudflare, with **Email Routing** enabled
 
-### Prerequisites
+## One-Time Setup
 
-- [Bun](https://bun.sh/) installed on your machine (`curl -fsSL https://bun.sh/install | bash`)
-- [Node.js](https://nodejs.org/) (optional, Bun is recommended)
-
-### 1. Clone & Install
+### 1. Authenticate wrangler
 
 ```bash
-git clone https://github.com/KyuuX444/kyzz-temp.git
-cd kyzz-temp
+wrangler login
+```
+
+### 2. Create the two KV namespaces
+
+```bash
+wrangler kv namespace create MAILBOX_STORE
+wrangler kv namespace create MAILBOX_STORE --preview
+wrangler kv namespace create RATE_LIMIT
+wrangler kv namespace create RATE_LIMIT --preview
+```
+
+Copy the IDs printed by each command into `wrangler.toml`:
+
+```toml
+[[kv_namespaces]]
+binding = "MAILBOX_STORE"
+id = "abc..."              # from production create
+preview_id = "def..."      # from preview create
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "ghi..."
+preview_id = "jkl..."
+```
+
+### 3. (Optional) Set secrets
+
+```bash
+wrangler pages secret put WEBHOOK_SECRET --project-name my-temp
+wrangler pages secret put MAIL_API_KEY --project-name my-temp   # only if using mailslurp
+```
+
+## Local Development
+
+```bash
 bun install
-```
-
-### 2. Configure Environment
-
-Copy the example environment file:
-
-```bash
 cp .env.example .env
-```
-
-Edit `.env` according to your preferred configuration:
-
-```ini
-# Server Configuration
-PORT=3000
-HOST=0.0.0.0
-
-# Mail Provider Selection: 'mailgw' | 'mailslurp' | 'webhook' | 'mock'
-MAIL_PROVIDER=mailgw
-
-# MailSlurp API Key (Only required if MAIL_PROVIDER=mailslurp)
-# MAILSLURP_API_KEY=your_mailslurp_api_key_here
-
-# Webhook Secret Token (Only required if MAIL_PROVIDER=webhook)
-# WEBHOOK_SECRET=your_webhook_secret_here
-
-# Rate Limiter Configuration (requests per minute per IP)
-RATE_LIMIT_MAX=60
-RATE_LIMIT_WINDOW_MS=60000
-```
-
-### 3. Run Development Server
-
-```bash
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+For local dev the app falls back to a process-memory shim when KV bindings are absent — UI works, rate limiter works, but state resets when the dev server restarts.
 
-### 4. Build for Production
+## Deploy
 
 ```bash
+bun run deploy
+```
+
+This runs `vite build` then `wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp`.
+
+Or do it manually:
+
+```bash
+bun install
 bun run build
-bun run preview
+wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp
 ```
 
----
+On first deploy Cloudflare will create the Pages project for you. After that you'll see the URL printed (e.g. `https://my-temp.pages.dev`).
 
-## 📡 REST API Documentation
+## Connect a Custom Domain (`yaoi.web.id`)
 
-Kyzz Temp provides clean REST API endpoints for external integrations:
+1. In Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains**
+2. Click **Set up a custom domain** → enter `yaoi.web.id`
+3. Repeat for `www.yaoi.web.id` (optional)
+4. Cloudflare auto-issues a certificate and updates DNS. Done.
 
-### 1. Generate Mailbox
-`POST /api/mailbox`
+## Mail Provider Modes
 
-**Request Body (Optional for custom alias):**
-```json
-{
-  "username": "customname",
-  "domain": "example.com"
-}
-```
+`MAIL_PROVIDER` controls which backend the app uses. Set it in Cloudflare Pages → Settings → Environment variables.
 
-**Response (`200 OK`):**
-```json
-{
-  "success": true,
-  "mailbox": {
-    "address": "customname@example.com",
-    "token": "auth_token_here",
-    "createdAt": "2026-09-13T21:00:00.000Z",
-    "expiresAt": "2026-09-13T22:00:00.000Z"
+| Provider | Use case | Inbound mail setup |
+|---|---|---|
+| `webhook` (default) | You own a domain (`yaoi.web.id`) and want real inbound mail | Cloudflare Email Routing → Email Worker → `POST /api/webhook/inbound` |
+| `mock` | Demo / development | None — seed messages only |
+| `mailgw` | Public zero-config temp mail | None — uses `mail.tm` / `mail.gw` API |
+| `mailslurp` | Enterprise / paid inbox service | None — MailSlurp API |
+| `improvmx` / `forwardemail` | Alternative forwarding providers | Configure provider's webhook to `POST /api/webhook/inbound` |
+
+### Real Inbound Email with Cloudflare Email Routing
+
+1. Cloudflare Dashboard → `yaoi.web.id` → **Email** → **Email Routing** → enable
+2. Add a catch-all route that forwards to a Worker
+3. Create the Worker (`email-routing-worker`) — example:
+
+```js
+export default {
+  async email(message, env, ctx) {
+    const to = message.to;
+    const from = message.from;
+    const subject = message.headers.get('subject') || '';
+    const raw = await new Response(message.raw).text();
+
+    await fetch('https://yaoi.web.id/api/webhook/inbound', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-webhook-secret': env.WEBHOOK_SECRET
+      },
+      body: JSON.stringify({
+        to: to,
+        from: from,
+        subject: subject,
+        text: raw
+      })
+    });
   }
-}
+};
 ```
 
----
+4. Bind `WEBHOOK_SECRET` to the Worker (same secret as the Pages app)
+5. Set the Email Routing rule to `*@yaoi.web.id` → route to this Worker
 
-### 2. Fetch Inbox Messages
-`GET /api/mailbox/:address/messages`
+## REST API
 
-**Headers:**
-`Authorization: Bearer <token>` (if required by provider)
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/domains` | List advertised domains |
+| `POST` | `/api/mailbox` | Create mailbox. Body: `{ username?, domain? }` |
+| `GET` | `/api/mailbox/:address` | Get mailbox info |
+| `DELETE` | `/api/mailbox/:address` | Delete mailbox |
+| `GET` | `/api/mailbox/:address/messages` | List messages |
+| `GET` | `/api/mailbox/:address/messages/:id` | Get message detail (sanitized HTML) |
+| `DELETE` | `/api/mailbox/:address/messages/:id` | Delete one message |
+| `GET` | `/api/mailbox/:address/events` | SSE real-time stream |
+| `POST` | `/api/webhook/inbound` | Inbound email receiver |
 
-**Response (`200 OK`):**
+All non-stream responses follow:
+
 ```json
-{
-  "success": true,
-  "messages": [
-    {
-      "id": "msg_123",
-      "from": { "name": "Google", "address": "no-reply@accounts.google.com" },
-      "subject": "Security verification code: 492019",
-      "intro": "Your verification code is 492019...",
-      "createdAt": "2026-09-13T21:05:00.000Z",
-      "isRead": false
-    }
-  ]
-}
+{ "success": true, "data": { ... } }
 ```
 
----
+Errors:
 
-### 3. Read Single Email
-`GET /api/mailbox/:address/messages/:id`
-
-**Response (`200 OK`):**
 ```json
-{
-  "success": true,
-  "message": {
-    "id": "msg_123",
-    "from": { "name": "Google", "address": "no-reply@accounts.google.com" },
-    "to": [{ "address": "user@domain.com" }],
-    "subject": "Security verification code: 492019",
-    "html": "<p>Your code is <b>492019</b></p>",
-    "text": "Your code is 492019",
-    "createdAt": "2026-09-13T21:05:00.000Z",
-    "attachments": []
-  }
-}
+{ "success": false, "error": { "code": "INVALID_USERNAME", "message": "..." } }
 ```
 
----
+## Project Structure
 
-### 4. Real-time Events Stream (SSE)
-`GET /api/mailbox/:address/events`
-
-Receives live updates whenever a new email arrives in the mailbox:
-```text
-event: connected
-data: {"status":"connected","address":"user@domain.com"}
-
-event: new_message
-data: {"id":"msg_123","subject":"Welcome!","from":"service@mail.com"}
 ```
-
----
-
-### 5. Inbound Webhook Endpoint
-`POST /api/webhook/inbound`
-
-Configurable endpoint to receive raw incoming emails from Cloudflare Workers, ImprovMX, or ForwardEmail.
-
----
-
-## 📂 Project Structure
-
-```text
-kyzz-temp/
+my-temp/
 ├── src/
 │   ├── lib/
-│   │   ├── components/       # Svelte UI Components (Navbar, Generator, Inbox, Viewer)
+│   │   ├── components/      # Svelte UI (Navbar, Generator, Inbox, Viewer, ...)
 │   │   ├── server/
-│   │   │   ├── mail/         # Multi-provider mail engines (MailGW, MailSlurp, Webhook)
-│   │   │   └── security/     # HTML Sanitizer, Rate limiter, Security headers
-│   │   ├── stores/           # Svelte 5 reactive stores
-│   │   └── utils/            # Helper functions & formatters
+│   │   │   ├── db.ts        # KV-backed mailbox + rate-limit helpers
+│   │   │   ├── mail/        # Mail providers (webhook / mock / mailgw / mailslurp)
+│   │   │   └── security/    # HTML sanitizer + KV rate limiter
+│   │   ├── stores/          # Svelte 5 reactive stores
+│   │   └── utils/
 │   ├── routes/
-│   │   ├── api/              # REST Endpoints (Mailbox, Messages, SSE, Webhook)
-│   │   ├── api-docs/         # Interactive API Documentation page
-│   │   ├── faq/              # Frequently Asked Questions
-│   │   ├── privacy/          # Privacy Policy
-│   │   ├── +layout.svelte    # Global layout & toast container
-│   │   └── +page.svelte      # Main application dashboard
-├── static/                   # Favicons, Manifest & Service Workers
+│   │   ├── api/             # REST + SSE + webhook endpoints
+│   │   ├── api-docs/        # Interactive API docs page
+│   │   ├── faq/
+│   │   ├── privacy/
+│   │   ├── +layout.svelte
+│   │   └── +page.svelte
+│   ├── hooks.server.ts
+│   └── app.d.ts             # Cloudflare env type bindings
+├── static/
+├── wrangler.toml            # KV bindings + non-secret vars
+├── svelte.config.js
+├── vite.config.ts
+├── tsconfig.json
 ├── package.json
-├── README.md
-└── tsconfig.json
+└── README.md
 ```
 
----
+## License
 
-## 🔒 Security Best Practices
-
-- All rendered email HTML content is sanitized using strict server-side rules preventing script execution and CSS-based phishing.
-- Built-in In-Memory sliding-window rate limiting per IP.
-- Zero persistent logging of confidential email contents.
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
-
-<div align="center">
-  <b>Built with ❤️ by <a href="https://github.com/KyuuX444">KyuuX444</a></b>
-</div>
+MIT — original work © [KyuuX444](https://github.com/KyuuX444), Cloudflare migration © repo owner.

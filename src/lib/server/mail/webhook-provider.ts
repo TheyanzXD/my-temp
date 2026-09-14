@@ -6,18 +6,39 @@ import type {
 	MailProvider
 } from './types';
 import { sanitizeEmailHtml } from '../security';
+import {
+	putMailbox,
+	getMailboxKV,
+	appendMessageKV,
+	getMessagesKV,
+	deleteMailboxKV,
+	deleteMessageKV,
+	updateMessageReadKV
+} from '../db';
 
-
-export const webhookEmailStore = new Map<string, EmailMessageDetail[]>();
-export const webhookMailboxStore = new Map<string, Mailbox>();
-
+/**
+ * WebhookMailProvider — store mailboxes + messages in Cloudflare KV so they
+ * survive across requests/isolates. Use with MAIL_PROVIDER=webhook and
+ * CUSTOM_DOMAINS=yaoi.web.id (or any domain you own that is wired into
+ * Cloudflare Email Routing, ImprovMX, or ForwardEmail).
+ */
 export class WebhookMailProvider implements MailProvider {
 	public readonly name: string;
 	private customDomains: string[];
 
-	constructor(name = 'Webhook Provider (Cloudflare / ForwardEmail / ImprovMX)', domains: string[] = ['mycustomdomain.com']) {
+	constructor(
+		name = 'Webhook Provider (Cloudflare / ForwardEmail / ImprovMX)',
+		domains: string[] = ['yaoi.web.id']
+	) {
 		this.name = name;
 		this.customDomains = domains;
+	}
+
+	// Each provider call receives the SvelteKit platform so we can access KV.
+	private platform: App.Platform | undefined;
+
+	bind(platform: App.Platform | undefined) {
+		this.platform = platform;
 	}
 
 	async getDomains(): Promise<DomainInfo[]> {
@@ -31,7 +52,7 @@ export class WebhookMailProvider implements MailProvider {
 	}
 
 	async createMailbox(customUsername?: string, chosenDomain?: string): Promise<Mailbox> {
-		const domain = chosenDomain || this.customDomains[0] || 'mycustomdomain.com';
+		const domain = chosenDomain || this.customDomains[0] || 'yaoi.web.id';
 		let username = customUsername
 			? customUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '')
 			: '';
@@ -58,23 +79,16 @@ export class WebhookMailProvider implements MailProvider {
 			messageCount: 0
 		};
 
-		webhookMailboxStore.set(address, mailbox);
-		if (!webhookEmailStore.has(address)) {
-			webhookEmailStore.set(address, []);
-		}
-
+		await putMailbox(this.platform, mailbox);
 		return mailbox;
 	}
 
 	async getMailbox(address: string): Promise<Mailbox | null> {
-		const lower = address.toLowerCase();
-		return webhookMailboxStore.get(lower) || null;
+		return getMailboxKV(this.platform, address);
 	}
 
 	async getMessages(address: string): Promise<EmailMessageSummary[]> {
-		const lower = address.toLowerCase();
-		const list = webhookEmailStore.get(lower) || [];
-
+		const list = await getMessagesKV(this.platform, address);
 		return list.map((m) => ({
 			id: m.id,
 			mailboxId: m.mailboxId,
@@ -90,51 +104,58 @@ export class WebhookMailProvider implements MailProvider {
 	}
 
 	async getMessage(address: string, messageId: string): Promise<EmailMessageDetail | null> {
-		const lower = address.toLowerCase();
-		const list = webhookEmailStore.get(lower) || [];
-		const msg = list.find((m) => m.id === messageId);
-		if (!msg) return null;
-		msg.isRead = true;
-		return { ...msg };
+		return updateMessageReadKV(this.platform, address, messageId);
 	}
 
 	async deleteMailbox(address: string): Promise<boolean> {
-		const lower = address.toLowerCase();
-		webhookMailboxStore.delete(lower);
-		webhookEmailStore.delete(lower);
+		await deleteMailboxKV(this.platform, address);
 		return true;
 	}
 
 	async deleteMessage(address: string, messageId: string): Promise<boolean> {
-		const lower = address.toLowerCase();
-		const list = webhookEmailStore.get(lower) || [];
-		const idx = list.findIndex((m) => m.id === messageId);
-		if (idx === -1) return false;
-		list.splice(idx, 1);
-		const mb = webhookMailboxStore.get(lower);
-		if (mb) mb.messageCount = list.length;
-		return true;
+		return deleteMessageKV(this.platform, address, messageId);
 	}
 }
 
-
-export function receiveInboundWebhookEmail(data: {
-	to: string;
-	from: string;
-	fromName?: string;
-	subject: string;
-	text?: string;
-	html?: string;
-}) {
+/**
+ * Helper used by the inbound webhook endpoint. Stores the message in KV
+ * associated with the recipient mailbox (auto-creates a mailbox record on
+ * the fly so newly-received mail shows up before the user opens the UI).
+ */
+export async function receiveInboundWebhookEmail(
+	platform: App.Platform | undefined,
+	data: {
+		to: string;
+		from: string;
+		fromName?: string;
+		subject: string;
+		text?: string;
+		html?: string;
+	}
+): Promise<EmailMessageDetail> {
 	const address = data.to.toLowerCase().trim();
-	const list = webhookEmailStore.get(address) || [];
+
+	// Auto-create mailbox if missing
+	let mb = await getMailboxKV(platform, address);
+	if (!mb) {
+		const domain = address.split('@')[1] || 'yaoi.web.id';
+		mb = {
+			id: 'mb_inbound_' + Math.random().toString(36).substring(2, 9),
+			address,
+			domain,
+			createdAt: new Date().toISOString(),
+			expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+			messageCount: 0
+		};
+		await putMailbox(platform, mb);
+	}
 
 	const rawHtml = data.html || (data.text ? `<pre>${data.text}</pre>` : '');
 	const textBody = data.text || data.html?.replace(/<[^>]*>/g, '') || '';
 
 	const newMsg: EmailMessageDetail = {
 		id: 'msg_inbound_' + Math.random().toString(36).substring(2, 10),
-		mailboxId: webhookMailboxStore.get(address)?.id || 'mb_inbound',
+		mailboxId: mb.id,
 		mailboxAddress: address,
 		from: {
 			name: data.fromName || data.from,
@@ -152,13 +173,6 @@ export function receiveInboundWebhookEmail(data: {
 		attachments: []
 	};
 
-	list.unshift(newMsg);
-	webhookEmailStore.set(address, list);
-
-	const mb = webhookMailboxStore.get(address);
-	if (mb) {
-		mb.messageCount = list.length;
-	}
-
+	await appendMessageKV(platform, address, newMsg);
 	return newMsg;
 }

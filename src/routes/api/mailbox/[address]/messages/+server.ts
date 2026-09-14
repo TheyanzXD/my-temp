@@ -2,16 +2,13 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { getMessages } from '$lib/server/mail';
 import { checkRateLimit, securityHeaders } from '$lib/server/security';
 
-export const GET: RequestHandler = async ({ params, getClientAddress }) => {
+export const GET: RequestHandler = async ({ params, getClientAddress, platform }) => {
 	const ip = getClientAddress();
-	const rate = checkRateLimit(ip, 120);
+	const rate = await checkRateLimit(platform, ip, 120);
 
 	if (!rate.allowed) {
 		return json(
-			{
-				success: false,
-				error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded' }
-			},
+			{ success: false, error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded' } },
 			{ status: 429, headers: securityHeaders }
 		);
 	}
@@ -19,25 +16,15 @@ export const GET: RequestHandler = async ({ params, getClientAddress }) => {
 	const address = params.address;
 	if (!address || !address.includes('@')) {
 		return json(
-			{
-				success: false,
-				error: { code: 'INVALID_ADDRESS', message: 'Invalid email address' }
-			},
+			{ success: false, error: { code: 'INVALID_ADDRESS', message: 'Invalid email address' } },
 			{ status: 400, headers: securityHeaders }
 		);
 	}
 
 	try {
-		const messages = await getMessages(address);
+		const messages = await getMessages(platform, address);
 		return json(
-			{
-				success: true,
-				data: {
-					address,
-					count: messages.length,
-					messages
-				}
-			},
+			{ success: true, data: { address, count: messages.length, messages } },
 			{
 				headers: {
 					...securityHeaders,
@@ -47,12 +34,6 @@ export const GET: RequestHandler = async ({ params, getClientAddress }) => {
 		);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : 'Error fetching messages';
-		return json(
-			{
-				success: false,
-				error: { code: 'INTERNAL_ERROR', message }
-			},
-			{ status: 500, headers: securityHeaders }
-		);
+		return json({ success: false, error: { code: 'INTERNAL_ERROR', message } }, { status: 500, headers: securityHeaders });
 	}
 };

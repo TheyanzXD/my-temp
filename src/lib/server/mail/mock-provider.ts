@@ -6,69 +6,41 @@ import type {
 	MailProvider
 } from './types';
 import { sanitizeEmailHtml } from '../security';
+import {
+	putMailbox,
+	getMailboxKV,
+	appendMessageKV,
+	getMessagesKV,
+	deleteMailboxKV,
+	deleteMessageKV,
+	updateMessageReadKV
+} from '../db';
 
+/**
+ * MockMailProvider — uses Cloudflare KV (or dev memory shim) to persist a
+ * handful of demo domains and the seeded sample emails per mailbox.
+ * No external network calls; safe for first-deploy demos.
+ */
 export class MockMailProvider implements MailProvider {
-	public readonly name = 'MockMailProvider (Full Interactive Engine)';
+	public readonly name = 'MockMailProvider (KV-backed)';
 
 	private domains: DomainInfo[] = [
-		{
-			domain: 'tempinbox.org',
-			status: 'online',
-			availability: true,
-			mxStatus: 'active',
-			lastChecked: new Date().toISOString()
-		},
-		{
-			domain: 'quickmail.dev',
-			status: 'online',
-			availability: true,
-			mxStatus: 'active',
-			lastChecked: new Date().toISOString()
-		},
-		{
-			domain: 'disposafast.io',
-			status: 'online',
-			availability: true,
-			mxStatus: 'active',
-			lastChecked: new Date().toISOString()
-		},
-		{
-			domain: 'mailprivy.net',
-			status: 'online',
-			availability: true,
-			mxStatus: 'active',
-			lastChecked: new Date().toISOString()
-		},
-		{
-			domain: 'vaultbox.cc',
-			status: 'degraded',
-			availability: true,
-			mxStatus: 'active',
-			lastChecked: new Date().toISOString()
-		}
+		{ domain: 'tempinbox.org', status: 'online', availability: true, mxStatus: 'active', lastChecked: new Date().toISOString() },
+		{ domain: 'quickmail.dev', status: 'online', availability: true, mxStatus: 'active', lastChecked: new Date().toISOString() },
+		{ domain: 'disposafast.io', status: 'online', availability: true, mxStatus: 'active', lastChecked: new Date().toISOString() },
+		{ domain: 'mailprivy.net', status: 'online', availability: true, mxStatus: 'active', lastChecked: new Date().toISOString() },
+		{ domain: 'vaultbox.cc', status: 'degraded', availability: true, mxStatus: 'active', lastChecked: new Date().toISOString() }
 	];
 
-	private mailboxes = new Map<string, Mailbox>();
-	private messages = new Map<string, EmailMessageDetail[]>();
-
-	constructor() {
-		if (typeof setInterval !== 'undefined') {
-			setInterval(() => this.cleanupExpiredMailboxes(), 5 * 60 * 1000);
-		}
-	}
-
-	private cleanupExpiredMailboxes() {
-		const now = Date.now();
-		for (const [address, mb] of this.mailboxes.entries()) {
-			if (new Date(mb.expiresAt).getTime() < now) {
-				this.mailboxes.delete(address);
-				this.messages.delete(address);
-			}
-		}
+	private platform: App.Platform | undefined;
+	bind(platform: App.Platform | undefined) {
+		this.platform = platform;
 	}
 
 	async getDomains(): Promise<DomainInfo[]> {
-		return [...this.domains];
+		// Mark them fresh on each call so timestamps stay recent
+		const now = new Date().toISOString();
+		return this.domains.map((d) => ({ ...d, lastChecked: now }));
 	}
 
 	async createMailbox(customUsername?: string, chosenDomain?: string): Promise<Mailbox> {
@@ -104,126 +76,84 @@ export class MockMailProvider implements MailProvider {
 			messageCount: 0
 		};
 
-		this.mailboxes.set(address, mailbox);
-		this.messages.set(address, []);
+		await putMailbox(this.platform, mailbox);
 
-
-		this.scheduleSampleEmails(address, username);
+		// Seed two sample messages for instant UI demo. Done as a "best-effort"
+		// background fire-and-forget — errors don't fail mailbox creation.
+		void this.seedSampleMessages(address, username);
 
 		return mailbox;
 	}
 
-	private addIncomingMessage(address: string, msg: Omit<EmailMessageDetail, 'id' | 'mailboxId' | 'mailboxAddress' | 'receivedAt'>) {
-		if (!this.mailboxes.has(address)) return;
-
-		const detail: EmailMessageDetail = {
-			id: 'msg_' + Math.random().toString(36).substring(2, 11),
-			mailboxId: this.mailboxes.get(address)?.id || '',
+	private async seedSampleMessages(address: string, username: string) {
+		// Message 1 — GitHub-style verification code
+		const code = Math.floor(100000 + Math.random() * 900000);
+		const html1 = `
+			<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #18181b; background-color: #ffffff; border-radius: 8px; border: 1px solid #e4e4e7;">
+				<div style="border-bottom: 1px solid #f4f4f5; padding-bottom: 16px; margin-bottom: 20px;">
+					<h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #09090b;">GitHub Security</h2>
+				</div>
+				<p style="font-size: 15px; line-height: 1.6; color: #3f3f46;">Hi <strong>${username}</strong>,</p>
+				<p style="font-size: 15px; line-height: 1.6; color: #3f3f46;">Please use the following verification code to confirm your email address:</p>
+				<div style="background-color: #f4f4f5; padding: 18px 24px; border-radius: 6px; text-align: center; margin: 24px 0; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #09090b; font-family: monospace;">${code}</div>
+				<p style="font-size: 14px; line-height: 1.5; color: #71717a;">This verification code will expire in 10 minutes.</p>
+			</div>
+		`;
+		await appendMessageKV(this.platform, address, {
+			id: 'msg_seed1_' + Math.random().toString(36).substring(2, 9),
+			mailboxId: '',
 			mailboxAddress: address,
+			from: { name: 'GitHub Security', address: 'noreply@github.com' },
+			to: [{ address }],
+			subject: `${code} is your GitHub verification code`,
+			preview: `Please use the following verification code to complete your login: ${code}...`,
 			receivedAt: new Date().toISOString(),
-			...msg
-		};
+			isRead: false,
+			hasAttachments: false,
+			textBody: `Hi ${username},\nYour verification code is: ${code}`,
+			htmlBody: html1,
+			sanitizedHtml: sanitizeEmailHtml(html1),
+			attachments: []
+		});
 
-		const list = this.messages.get(address) || [];
-		list.unshift(detail);
-		this.messages.set(address, list);
-
-		const mb = this.mailboxes.get(address);
-		if (mb) {
-			mb.messageCount = list.length;
-		}
-	}
-
-	private scheduleSampleEmails(address: string, username: string) {
-
-		setTimeout(() => {
-			const code = Math.floor(100000 + Math.random() * 900000);
-			const html = `
-				<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #18181b; background-color: #ffffff; border-radius: 8px; border: 1px solid #e4e4e7;">
-					<div style="border-bottom: 1px solid #f4f4f5; padding-bottom: 16px; margin-bottom: 20px;">
-						<h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #09090b;">GitHub Security</h2>
-					</div>
-					<p style="font-size: 15px; line-height: 1.6; color: #3f3f46;">Hi <strong>${username}</strong>,</p>
-					<p style="font-size: 15px; line-height: 1.6; color: #3f3f46;">Please use the following verification code to confirm your email address and complete your sign-in attempt:</p>
-					<div style="background-color: #f4f4f5; padding: 18px 24px; border-radius: 6px; text-align: center; margin: 24px 0; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #09090b; font-family: monospace;">
-						${code}
-					</div>
-					<p style="font-size: 14px; line-height: 1.5; color: #71717a;">This verification code will expire in 10 minutes. If you did not request this code, you can safely ignore this email.</p>
-					<hr style="border: none; border-top: 1px solid #f4f4f5; margin: 24px 0;" />
-					<p style="font-size: 12px; color: #a1a1aa; margin: 0;">Sent automatically by GitHub Security Team • Protect your account</p>
-				</div>
-			`;
-			this.addIncomingMessage(address, {
-				from: { name: 'GitHub Security', address: 'noreply@github.com' },
-				to: [{ address }],
-				subject: `${code} is your GitHub verification code`,
-				preview: `Please use the following verification code to complete your login: ${code}...`,
-				isRead: false,
-				hasAttachments: false,
-				textBody: `Hi ${username},\nYour verification code is: ${code}`,
-				htmlBody: html,
-				sanitizedHtml: sanitizeEmailHtml(html),
-				attachments: []
-			});
-		}, 1500);
-
-
-		setTimeout(() => {
-			const invoiceId = 'inv_' + Math.random().toString(36).substring(2, 9).toUpperCase();
-			const html = `
-				<div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 540px; border: 1px solid #eee; border-radius: 8px;">
-					<h3 style="color: #6366f1; margin-top: 0;">Payment Confirmation</h3>
-					<p>Thank you for your subscription! Your receipt <strong>#${invoiceId}</strong> has been generated.</p>
-					<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
-						<tr style="border-bottom: 1px solid #ddd;">
-							<td style="padding: 8px 0;">Pro Plan (Monthly)</td>
-							<td style="text-align: right; padding: 8px 0;">$0.00 (Trial)</td>
-						</tr>
-					</table>
-					<p style="font-size: 12px; color: #888;">Manage your billing preferences anytime in your account dashboard.</p>
-				</div>
-			`;
-			this.addIncomingMessage(address, {
-				from: { name: 'Stripe Billing', address: 'receipts@stripe.com' },
-				to: [{ address }],
-				subject: `Receipt #${invoiceId} for your subscription`,
-				preview: `Thank you for your payment. Your receipt #${invoiceId} is available for download...`,
-				isRead: false,
-				hasAttachments: true,
-				textBody: `Your receipt #${invoiceId} is ready.`,
-				htmlBody: html,
-				sanitizedHtml: sanitizeEmailHtml(html),
-				attachments: [
-					{
-						id: 'att_1',
-						filename: `receipt-${invoiceId}.pdf`,
-						contentType: 'application/pdf',
-						size: 24500
-					}
-				]
-			});
-		}, 12000);
+		// Message 2 — Stripe-style receipt
+		const invoiceId = 'inv_' + Math.random().toString(36).substring(2, 9).toUpperCase();
+		const html2 = `
+			<div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 540px; border: 1px solid #eee; border-radius: 8px;">
+				<h3 style="color: #6366f1; margin-top: 0;">Payment Confirmation</h3>
+				<p>Thank you for your subscription! Your receipt <strong>#${invoiceId}</strong> has been generated.</p>
+			</div>
+		`;
+		await appendMessageKV(this.platform, address, {
+			id: 'msg_seed2_' + Math.random().toString(36).substring(2, 9),
+			mailboxId: '',
+			mailboxAddress: address,
+			from: { name: 'Stripe Billing', address: 'receipts@stripe.com' },
+			to: [{ address }],
+			subject: `Receipt #${invoiceId} for your subscription`,
+			preview: `Thank you for your payment. Your receipt #${invoiceId} is available for download...`,
+			receivedAt: new Date().toISOString(),
+			isRead: false,
+			hasAttachments: true,
+			textBody: `Your receipt #${invoiceId} is ready.`,
+			htmlBody: html2,
+			sanitizedHtml: sanitizeEmailHtml(html2),
+			attachments: [{ id: 'att_1', filename: `receipt-${invoiceId}.pdf`, contentType: 'application/pdf', size: 24500 }]
+		});
 	}
 
 	async getMailbox(address: string): Promise<Mailbox | null> {
-		const lower = address.toLowerCase();
-		const mb = this.mailboxes.get(lower);
+		const mb = await getMailboxKV(this.platform, address);
 		if (!mb) return null;
-
 		if (new Date(mb.expiresAt).getTime() < Date.now()) {
-			this.mailboxes.delete(lower);
-			this.messages.delete(lower);
+			await deleteMailboxKV(this.platform, address);
 			return null;
 		}
-
 		return { ...mb };
 	}
 
 	async getMessages(address: string): Promise<EmailMessageSummary[]> {
-		const lower = address.toLowerCase();
-		const list = this.messages.get(lower);
-		if (!list) return [];
-
+		const list = await getMessagesKV(this.platform, address);
 		return list.map((m) => ({
 			id: m.id,
 			mailboxId: m.mailboxId,
@@ -239,37 +169,15 @@ export class MockMailProvider implements MailProvider {
 	}
 
 	async getMessage(address: string, messageId: string): Promise<EmailMessageDetail | null> {
-		const lower = address.toLowerCase();
-		const list = this.messages.get(lower);
-		if (!list) return null;
-
-		const msg = list.find((m) => m.id === messageId);
-		if (!msg) return null;
-
-		msg.isRead = true;
-		return { ...msg };
+		return updateMessageReadKV(this.platform, address, messageId);
 	}
 
 	async deleteMailbox(address: string): Promise<boolean> {
-		const lower = address.toLowerCase();
-		this.mailboxes.delete(lower);
-		this.messages.delete(lower);
+		await deleteMailboxKV(this.platform, address);
 		return true;
 	}
 
 	async deleteMessage(address: string, messageId: string): Promise<boolean> {
-		const lower = address.toLowerCase();
-		const list = this.messages.get(lower);
-		if (!list) return false;
-
-		const index = list.findIndex((m) => m.id === messageId);
-		if (index === -1) return false;
-
-		list.splice(index, 1);
-		const mb = this.mailboxes.get(lower);
-		if (mb) {
-			mb.messageCount = list.length;
-		}
-		return true;
+		return deleteMessageKV(this.platform, address, messageId);
 	}
 }

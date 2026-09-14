@@ -2,9 +2,9 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { createMailbox } from '$lib/server/mail';
 import { checkRateLimit, securityHeaders } from '$lib/server/security';
 
-export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+export const POST: RequestHandler = async ({ request, getClientAddress, platform }) => {
 	const ip = getClientAddress();
-	const rate = checkRateLimit(ip, 30);
+	const rate = await checkRateLimit(platform, ip, 30);
 
 	if (!rate.allowed) {
 		return json(
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 					if (typeof body.domain === 'string') domain = body.domain.trim();
 				}
 			} catch {
-
+				// ignore
 			}
 		}
 
@@ -52,7 +52,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			);
 		}
 
-		const mailbox = await createMailbox(username, domain);
+		const mailbox = await createMailbox(platform, username, domain);
 
 		return json(
 			{

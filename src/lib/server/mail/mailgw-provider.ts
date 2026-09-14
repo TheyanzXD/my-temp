@@ -6,16 +6,14 @@ import type {
 	MailProvider
 } from './types';
 import { sanitizeEmailHtml } from '../security';
-import { MockMailProvider } from './mock-provider';
 
 export class MailGwProvider implements MailProvider {
-	public readonly name = 'Mail.tm / Mail.gw API (with Auto-Fallback)';
+	public readonly name = 'Mail.tm / Mail.gw API';
 	private primaryUrl = 'https://api.mail.tm';
 	private fallbackUrl = 'https://api.mail.gw';
 	private tokens = new Map<string, string>();
 	private mailboxIds = new Map<string, string>();
 	private passwords = new Map<string, string>();
-	private fallbackMock = new MockMailProvider();
 
 	private async request<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T> {
 		const headers: Record<string, string> = {
@@ -82,10 +80,10 @@ export class MailGwProvider implements MailProvider {
 				}));
 			}
 		} catch {
-
+			// swallow
 		}
 
-		return await this.fallbackMock.getDomains();
+		return [];
 	}
 
 	private async getAuthToken(address: string, password?: string): Promise<string> {
@@ -109,56 +107,51 @@ export class MailGwProvider implements MailProvider {
 	}
 
 	async createMailbox(customUsername?: string, chosenDomain?: string): Promise<Mailbox> {
-		try {
-			const domains = await this.getDomains();
-			const activeDomains = domains.filter((d) => d.availability);
-			const domain =
-				chosenDomain && domains.some((d) => d.domain === chosenDomain)
-					? chosenDomain
-					: activeDomains[0]?.domain || 'uberip.com';
+		const domains = await this.getDomains();
+		const activeDomains = domains.filter((d) => d.availability);
+		const domain =
+			chosenDomain && domains.some((d) => d.domain === chosenDomain)
+				? chosenDomain
+				: activeDomains[0]?.domain || 'uberip.com';
 
-			let username = customUsername
-				? customUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '')
-				: '';
+		let username = customUsername
+			? customUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '')
+			: '';
 
-			if (!username) {
-				const randNum = Math.floor(100000 + Math.random() * 900000);
-				username = `user.${randNum}`;
-			}
-
-			const address = `${username}@${domain}`.toLowerCase();
-			const password = 'KyzzTemp#' + Math.random().toString(36).substring(2, 10);
-			this.passwords.set(address, password);
-
-			interface CreateAccountResponse {
-				id: string;
-				address: string;
-				createdAt: string;
-			}
-
-			const account = await this.request<CreateAccountResponse>('/accounts', {
-				method: 'POST',
-				body: JSON.stringify({ address, password })
-			});
-
-			this.mailboxIds.set(address, account.id);
-			await this.getAuthToken(address, password);
-
-			const now = new Date();
-			const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
-
-			return {
-				id: account.id,
-				address,
-				domain,
-				createdAt: account.createdAt || now.toISOString(),
-				expiresAt,
-				messageCount: 0
-			};
-		} catch (err) {
-			console.warn('⚠️ Mail.tm rate limit or 502 detected. Smoothly fallback to interactive engine.');
-			return await this.fallbackMock.createMailbox(customUsername, chosenDomain);
+		if (!username) {
+			const randNum = Math.floor(100000 + Math.random() * 900000);
+			username = `user.${randNum}`;
 		}
+
+		const address = `${username}@${domain}`.toLowerCase();
+		const password = 'KyzzTemp#' + Math.random().toString(36).substring(2, 10);
+		this.passwords.set(address, password);
+
+		interface CreateAccountResponse {
+			id: string;
+			address: string;
+			createdAt: string;
+		}
+
+		const account = await this.request<CreateAccountResponse>('/accounts', {
+			method: 'POST',
+			body: JSON.stringify({ address, password })
+		});
+
+		this.mailboxIds.set(address, account.id);
+		await this.getAuthToken(address, password);
+
+		const now = new Date();
+		const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+
+		return {
+			id: account.id,
+			address,
+			domain,
+			createdAt: account.createdAt || now.toISOString(),
+			expiresAt,
+			messageCount: 0
+		};
 	}
 
 	async getMailbox(address: string): Promise<Mailbox | null> {
@@ -181,7 +174,7 @@ export class MailGwProvider implements MailProvider {
 				messageCount: 0
 			};
 		} catch {
-			return await this.fallbackMock.getMailbox(lower);
+			return null;
 		}
 	}
 
@@ -223,7 +216,7 @@ export class MailGwProvider implements MailProvider {
 				hasAttachments: m.hasAttachments || false
 			}));
 		} catch {
-			return await this.fallbackMock.getMessages(lower);
+			return [];
 		}
 	}
 
@@ -276,7 +269,7 @@ export class MailGwProvider implements MailProvider {
 				}))
 			};
 		} catch {
-			return await this.fallbackMock.getMessage(lower, messageId);
+			return null;
 		}
 	}
 
@@ -291,7 +284,7 @@ export class MailGwProvider implements MailProvider {
 			this.passwords.delete(lower);
 			return true;
 		} catch {
-			return await this.fallbackMock.deleteMailbox(lower);
+			return false;
 		}
 	}
 
@@ -302,7 +295,7 @@ export class MailGwProvider implements MailProvider {
 			await this.request(`/messages/${messageId}`, { method: 'DELETE' }, token);
 			return true;
 		} catch {
-			return await this.fallbackMock.deleteMessage(lower, messageId);
+			return false;
 		}
 	}
 }

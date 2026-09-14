@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
+import { rateLimitHit } from '../db';
 
 export function sanitizeEmailHtml(html: string): string {
 	if (!html) return '';
@@ -37,54 +38,19 @@ export function sanitizeEmailHtml(html: string): string {
 	});
 }
 
-
-interface RateLimitEntry {
-	count: number;
-	resetTime: number;
-}
-
-const rateLimitMap = new Map<string, RateLimitEntry>();
-
-export function checkRateLimit(
+/**
+ * KV-backed sliding window rate limiter. Safe for Cloudflare Workers/Pages
+ * (no in-memory state) and shared across all isolates globally.
+ */
+export async function checkRateLimit(
+	platform: App.Platform | undefined,
 	clientIp: string,
 	maxRequests = 100,
 	windowMs = 60 * 1000
-): { allowed: boolean; remaining: number; resetTime: number } {
-	const now = Date.now();
-	const entry = rateLimitMap.get(clientIp);
-
-
-	if (rateLimitMap.size > 5000) {
-		for (const [key, val] of rateLimitMap.entries()) {
-			if (val.resetTime < now) {
-				rateLimitMap.delete(key);
-			}
-		}
-	}
-
-	if (!entry || entry.resetTime < now) {
-		const newEntry: RateLimitEntry = {
-			count: 1,
-			resetTime: now + windowMs
-		};
-		rateLimitMap.set(clientIp, newEntry);
-		return {
-			allowed: true,
-			remaining: maxRequests - 1,
-			resetTime: newEntry.resetTime
-		};
-	}
-
-	entry.count += 1;
-	const remaining = Math.max(0, maxRequests - entry.count);
-
-	return {
-		allowed: entry.count <= maxRequests,
-		remaining,
-		resetTime: entry.resetTime
-	};
+): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+	const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
+	return rateLimitHit(platform, clientIp, maxRequests, windowSec);
 }
-
 
 export const securityHeaders: Record<string, string> = {
 	'X-Frame-Options': 'DENY',

@@ -1,18 +1,16 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { receiveInboundWebhookEmail } from '$lib/server/mail/webhook-provider';
 import { securityHeaders } from '$lib/server/security';
-import { env } from '$env/dynamic/private';
 
-export const POST: RequestHandler = async ({ request }) => {
-
+export const POST: RequestHandler = async ({ request, platform }) => {
 	const authHeader = request.headers.get('authorization') || request.headers.get('x-webhook-secret') || '';
-	if (env.WEBHOOK_SECRET && !authHeader.includes(env.WEBHOOK_SECRET)) {
+	const expected = platform?.env?.WEBHOOK_SECRET;
+	if (expected && !authHeader.includes(expected)) {
 		return json({ success: false, error: 'Unauthorized webhook request' }, { status: 401 });
 	}
 
 	try {
 		const body = await request.json();
-		
 
 		const to = body.to || body.recipient || (Array.isArray(body.to) ? body.to[0] : '') || '';
 		const from = body.from || body.sender || 'unknown@sender.com';
@@ -25,7 +23,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ success: false, error: 'Invalid or missing "to" email address' }, { status: 400 });
 		}
 
-		const msg = receiveInboundWebhookEmail({
+		const msg = await receiveInboundWebhookEmail(platform, {
 			to,
 			from,
 			fromName,

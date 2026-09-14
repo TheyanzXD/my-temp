@@ -2,9 +2,9 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { getMessages, getMailbox } from '$lib/server/mail';
 import { checkRateLimit } from '$lib/server/security';
 
-export const GET: RequestHandler = async ({ params, getClientAddress, request }) => {
+export const GET: RequestHandler = async ({ params, getClientAddress, request, platform }) => {
 	const ip = getClientAddress();
-	const rate = checkRateLimit(ip, 120);
+	const rate = await checkRateLimit(platform, ip, 120);
 
 	if (!rate.allowed) {
 		return new Response('Rate limit exceeded', { status: 429 });
@@ -27,7 +27,6 @@ export const GET: RequestHandler = async ({ params, getClientAddress, request })
 				try {
 					controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
 				} catch {
-
 					cleanup();
 				}
 			};
@@ -42,9 +41,8 @@ export const GET: RequestHandler = async ({ params, getClientAddress, request })
 
 			request.signal.addEventListener('abort', cleanup);
 
-
 			try {
-				const mailbox = await getMailbox(address);
+				const mailbox = await getMailbox(platform, address);
 				if (!mailbox) {
 					sendEvent('mailbox_status', { error: 'Mailbox not found or expired', expired: true });
 					controller.close();
@@ -52,12 +50,11 @@ export const GET: RequestHandler = async ({ params, getClientAddress, request })
 				}
 
 				sendEvent('mailbox_status', { mailbox });
-				const initialMessages = await getMessages(address);
+				const initialMessages = await getMessages(platform, address);
 				sendEvent('messages', { messages: initialMessages });
 
 				let lastCount = initialMessages.length;
 				let lastIds = initialMessages.map((m) => m.id).join(',');
-
 
 				timer = setInterval(async () => {
 					if (isAborted) {
@@ -66,19 +63,19 @@ export const GET: RequestHandler = async ({ params, getClientAddress, request })
 					}
 
 					try {
-						const mb = await getMailbox(address);
+						const mb = await getMailbox(platform, address);
 						if (!mb) {
 							sendEvent('mailbox_status', { error: 'Mailbox expired', expired: true });
 							cleanup();
 							try {
 								controller.close();
 							} catch {
-
+								/* noop */
 							}
 							return;
 						}
 
-						const msgs = await getMessages(address);
+						const msgs = await getMessages(platform, address);
 						const currentIds = msgs.map((m) => m.id).join(',');
 
 						if (msgs.length !== lastCount || currentIds !== lastIds) {
@@ -86,11 +83,10 @@ export const GET: RequestHandler = async ({ params, getClientAddress, request })
 							lastIds = currentIds;
 							sendEvent('messages', { messages: msgs, newEmail: true });
 						} else {
-
 							sendEvent('ping', { time: Date.now() });
 						}
 					} catch {
-
+						/* keep stream alive on transient errors */
 					}
 				}, 3000);
 			} catch (err: unknown) {
