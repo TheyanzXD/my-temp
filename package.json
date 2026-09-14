@@ -28,5 +28,9 @@
 		"typescript": "^6.0.3",
 		"vite": "^8.0.16",
 		"wrangler": "^4.20.0"
+	},
+	"allowScripts": {
+		"esbuild": true,
+		"workerd": true
 	}
 }

@@ -18,9 +18,9 @@ preview_id = "4d906e5aec2741aa833f5481ea160a07"
 # Default public environment variables (non-secret).
 [vars]
 MAIL_PROVIDER = "webhook"
-CUSTOM_DOMAINS = "yoai.my.id"
+CUSTOM_DOMAINS = "yaoi.web.id"
 APP_NAME = "MyTemp"
-APP_URL = "https://yoai.my.id"
+APP_URL = "https://yaoi.web.id"
 MAILBOX_LIFETIME_MINUTES = "60"
 MAX_REQUESTS_PER_MINUTE = "120"
 CORS_ALLOWED_ORIGINS = "*"

@@ -1,7 +1,7 @@
 # ⚡ MyTemp
 **High-performance disposable temporary email service — Cloudflare Pages Edition**
 
-Live at **https://yoai.my.id** (or the preview URL `https://my-temp.pages.dev`)
+Live at **https://yaoi.web.id** (or the preview URL `https://my-temp.pages.dev`)
 
 ---
 
@@ -15,14 +15,14 @@ It's a fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-a
 
 ## ✨ Features
 
-- 📬 **Instant inbox** — random address or custom alias (`alice@yoai.my.id`), generated in milliseconds.
+- 📬 **Instant inbox** — random address or custom alias (`alice@yaoi.web.id`), generated in milliseconds.
 - 🔄 **Real-time streaming** — Server-Sent Events inbox with auto-reconnect, no polling required.
 - 🔍 **Full-text search** — search across subject, sender, and preview bodies.
 - 📤 **Export & archive** — download your inbox as `jsonl` or `json` at any time.
 - 🛡️ **Strict sanitization** — every email body passes through `sanitize-html` with an allowlist before render.
 - 🚦 **Edge rate limiting** — KV-backed sliding-window, shared globally, no per-isolate drift.
 - 🔌 **6 mail providers** — webhook (default, real inbound), mock (demo), mailgw, mailslurp, ImprovMX, ForwardEmail.
-- 🌐 **Interactive REST API** — see the [live API docs](https://yoai.my.id/api-docs) with a built-in "Try it" panel.
+- 🌐 **Interactive REST API** — see the [live API docs](https://yaoi.web.id/api-docs) with a built-in "Try it" panel.
 - 🚀 **Zero servers** — deploys with one command; scales from zero to global in seconds.
 
 ---
@@ -62,14 +62,14 @@ Inbound mail (provider=webhook):
 
 ### 1. Use the hosted instance
 
-Skip the setup — go to **https://yoai.my.id**, generate an inbox, done.
+Skip the setup — go to **https://yaoi.web.id**, generate an inbox, done.
 
 ### 2. Self-host on Cloudflare Pages
 
 ```bash
 git clone https://github.com/TheyanzXD/my-temp.git
 cd my-temp
-bun install
+npm install
 ```
 
 Then follow the [Deployment Guide](#-deployment-guide) below.
@@ -148,7 +148,7 @@ Configure via `MAIL_PROVIDER` env var:
 
 | Provider | Inbound mail setup | Use case |
 |---|---|---|
-| `webhook` *(default)* | Wire Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain (e.g. `yoai.my.id`) |
+| `webhook` *(default)* | Wire Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain (e.g. `yaoi.web.id`) |
 | `cloudflare` | Same as webhook | Alias for clarity |
 | `improvmx` | ImprovMX webhook → `/api/v1/webhook/inbound` | ImprovMX-managed domain |
 | `forwardemail` | ForwardEmail webhook → `/api/v1/webhook/inbound` | ForwardEmail-managed domain |
@@ -158,15 +158,15 @@ Configure via `MAIL_PROVIDER` env var:
 
 ### Example: real inbound mail via Cloudflare Email Routing
 
-1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `yoai.my.id`
-2. `yoai.my.id` → **Email** → **Email Routing** → enable, add catch-all route
+1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `yaoi.web.id`
+2. `yaoi.web.id` → **Email** → **Email Routing** → enable, add catch-all route
 3. Create a Worker (`email-routing-worker`):
 
    ```js
    export default {
      async email(message, env) {
        const raw = await new Response(message.raw).text();
-       await fetch('https://yoai.my.id/api/v1/webhook/inbound', {
+       await fetch('https://yaoi.web.id/api/v1/webhook/inbound', {
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
@@ -184,9 +184,9 @@ Configure via `MAIL_PROVIDER` env var:
    ```
 
 4. Bind `WEBHOOK_SECRET` (same secret as the Pages app)
-5. Email Routing rule: `*@yoai.my.id` → `email-routing-worker`
+5. Email Routing rule: `*@yaoi.web.id` → `email-routing-worker`
 
-Now any mail to `your-alias@yoai.my.id` shows up in the inbox within 3 seconds (SSE poll interval).
+Now any mail to `your-alias@yaoi.web.id` shows up in the inbox within 3 seconds (SSE poll interval).
 
 ---
 
@@ -195,7 +195,7 @@ Now any mail to `your-alias@yoai.my.id` shows up in the inbox within 3 seconds (
 ### Prerequisites
 
 - Cloudflare account (free tier works)
-- `bun` (`curl -fsSL https://bun.sh/install | bash`)
+- Node.js 18+ and `npm` (no bun needed — see the note under Local Development)
 - A Cloudflare API token with:
   - Account → Cloudflare Pages → **Edit**
   - Account → Workers KV Storage → **Edit**
@@ -208,7 +208,7 @@ Now any mail to `your-alias@yoai.my.id` shows up in the inbox within 3 seconds (
 ```bash
 git clone https://github.com/TheyanzXD/my-temp.git
 cd my-temp
-bun install
+npm install
 ```
 
 ### Step 2 — Authenticate wrangler
@@ -249,7 +249,7 @@ preview_id = "..."
 
 ### Step 4 — Set non-secret variables (optional)
 
-Defaults already point to `yoai.my.id`. To change the domain:
+Defaults already point to `yaoi.web.id`. To change the domain:
 
 ```toml
 [vars]
@@ -269,13 +269,31 @@ wrangler pages secret put MAIL_API_KEY --project-name my-temp   # only if MAIL_P
 ### Step 6 — Deploy
 
 ```bash
-bun run deploy
+npm run deploy
 # equivalent to:
-#   bun run build
+#   npm run build
 #   wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp --commit-dirty=true
 ```
 
 On first deploy Cloudflare creates the `my-temp` Pages project. URL: `https://my-temp.pages.dev`.
+
+### Step 6b — Deploy via Git integration (dashboard)
+
+If you connect the repo in the dashboard instead of using the CLI, set the build
+configuration exactly like this:
+
+| Setting | Value |
+|---|---|
+| **Framework preset** | SvelteKit |
+| **Build command** | `npm run build` |
+| **Build output directory** | `.svelte-kit/cloudflare` |
+| **Environment variables (Production)** | `NODE_VERSION` = `22` (or newer) |
+
+> ⚠️ **Do not set the build command to anything involving bun.** The Cloudflare build
+> image detects `bun.lock` and runs `bun install --frozen-lockfile`, which fails with
+> `Unknown lockfile version` because the image's bundled bun (1.2.x) is older than the
+> bun that generated the lockfile. This repo deliberately contains no `bun.lock` —
+> commit only `package-lock.json` and the build will succeed.
 
 ### Step 7 — Attach custom domain
 
@@ -285,11 +303,11 @@ On first deploy Cloudflare creates the `my-temp` Pages project. URL: `https://my
 curl -X POST \
   -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"yoai.my.id"}' \
+  -d '{"name":"yaoi.web.id"}' \
   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/my-temp/domains"
 ```
 
-**Manual:** Cloudflare Dashboard → `yoai.my.id` → **DNS** → add `CNAME @ → my-temp.pages.dev` (proxied) and `CNAME www → my-temp.pages.dev`.
+**Manual:** Cloudflare Dashboard → `yaoi.web.id` → **DNS** → add `CNAME @ → my-temp.pages.dev` (proxied) and `CNAME www → my-temp.pages.dev`.
 
 ---
 
@@ -297,11 +315,17 @@ curl -X POST \
 
 ```bash
 cp .env.example .env       # optional
-bun run dev                # vite dev server with HMR
-bun run build              # production build → .svelte-kit/cloudflare
-bun run check              # svelte-check (typecheck)
-bun run preview            # preview the built site
+npm run dev                # vite dev server with HMR
+npm run build              # production build → .svelte-kit/cloudflare
+npm run check              # svelte-check (typecheck)
+npm run preview            # preview the built site
 ```
+
+> **Note:** Use `npm` (not `bun`) for Cloudflare Pages Git integration. The repo ships a
+> `package-lock.json` and no `bun.lock` on purpose — the Cloudflare build image's bundled
+> bun (1.2.x) cannot parse lockfiles written by newer bun versions and the build fails with
+> `Unknown lockfile version`. With `npm` + `package-lock.json` the build is fully
+> reproducible on both the build image and your machine.
 
 Without KV bindings (default in `vite dev`), the app falls back to in-memory shims so the UI still works — but state resets on server restart.
 
@@ -386,8 +410,8 @@ MIT — original work © [KyuuX444](https://github.com/KyuuX444), Cloudflare mig
 
 ## 🔗 Links
 
-- Live app: https://yoai.my.id
-- Interactive API docs: https://yoai.my.id/api-docs
+- Live app: https://yaoi.web.id
+- Interactive API docs: https://yaoi.web.id/api-docs
 - Upstream fork: https://github.com/KyuuX444/kyzz-temp
 - Cloudflare Pages: https://developers.cloudflare.com/pages
 - SvelteKit + Cloudflare: https://kit.svelte.dev/docs/adapter-cloudflare
