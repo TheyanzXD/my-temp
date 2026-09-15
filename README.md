@@ -1,31 +1,38 @@
+<div align="center">
+
 # ⚡ MyTemp
-**High-performance disposable temporary email service — Cloudflare Pages Edition**
 
-Live at **https://temp.yaoi.my.id** (or the preview URL `https://my-temp.pages.dev`)
+**Disposable temporary email — serverless, real-time, on Cloudflare's edge.**
+
+[![Live](https://img.shields.io/badge/Live-temp.yaoi.my.id-6366f1?style=for-the-badge&logo=cloudflare&logoColor=white)](https://temp.yaoi.my.id)
+[![API Docs](https://img.shields.io/badge/API_Docs-Interactive-22c55e?style=for-the-badge&logo=swagger&logoColor=white)](https://temp.yaoi.my.id/api-docs)
+[![License](https://img.shields.io/badge/License-MIT-71717a?style=for-the-badge)](./LICENSE)
+
+SvelteKit · Svelte 5 · Cloudflare Pages · Workers KV · TailwindCSS v4
+
+</div>
 
 ---
 
-## What Is This?
+## Overview
 
-MyTemp is a self-hostable, serverless, real-time disposable email service. Pick (or auto-generate) an inbox, get verification codes, download attachments, stream new mail live via SSE — all running on Cloudflare's edge network, **no servers to manage**.
+MyTemp is a self-hostable, serverless, real-time disposable email service. Pick (or auto-generate) an inbox, receive verification codes, stream new mail live via SSE — all running on Cloudflare's edge network, **no servers to manage**.
 
-It's a fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-architected so the entire stack lives inside Cloudflare's free tier.
-
----
+Fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-architected so the entire stack lives inside Cloudflare's free tier.
 
 ## ✨ Features
 
-- 📬 **Instant inbox** — random address or custom alias (`alice@temp.yaoi.my.id`), generated in milliseconds.
-- 🔄 **Real-time streaming** — Server-Sent Events inbox with auto-reconnect, no polling required.
-- 🔍 **Full-text search** — search across subject, sender, and preview bodies.
-- 📤 **Export & archive** — download your inbox as `jsonl` or `json` at any time.
-- 🛡️ **Strict sanitization** — every email body passes through `sanitize-html` with an allowlist before render.
-- 🚦 **Edge rate limiting** — KV-backed sliding-window, shared globally, no per-isolate drift.
-- 🔌 **6 mail providers** — webhook (default, real inbound), mock (demo), mailgw, mailslurp, ImprovMX, ForwardEmail.
-- 🌐 **Interactive REST API** — see the [live API docs](https://temp.yaoi.my.id/api-docs) with a built-in "Try it" panel.
-- 🚀 **Zero servers** — deploys with one command; scales from zero to global in seconds.
-
----
+| | Feature | Details |
+|---|---|---|
+| 📬 | **Instant inbox** | Random address or custom alias (`alice@temp.yaoi.my.id`), in milliseconds |
+| 🔄 | **Real-time streaming** | SSE inbox with auto-reconnect — no polling |
+| 🔍 | **Full-text search** | Search across subject, sender, and preview bodies |
+| 📤 | **Export & archive** | Download your inbox as `jsonl` or `json` |
+| 🛡️ | **Strict sanitization** | Every email body passes `sanitize-html` allowlist before render |
+| 🚦 | **Edge rate limiting** | KV-backed sliding window, shared globally across isolates |
+| 🔌 | **7 mail providers** | webhook (default), mock, mailgw, mailslurp, cloudflare, improvmx, forwardemail |
+| 🌐 | **Interactive REST API** | Built-in "Try it" panel at `/api-docs` |
+| 🚀 | **Zero servers** | One-command deploy, scales globally in seconds |
 
 ## 🏗️ Architecture
 
@@ -36,7 +43,7 @@ It's a fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-a
                │ HTTPS
                ▼
 ┌────────────────────────────────────────────────┐
-│  Cloudflare Pages Function (Workers runtime)   │
+│  Cloudflare Pages (Workers runtime)            │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │ SvelteKit │  │  Svelte  │  │ API v1       │  │
 │  │   UI      │  │  5 runes │  │ /health, /v1 │  │
@@ -47,24 +54,20 @@ It's a fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-a
 ┌────────────────────────────────────────────────┐
 │  Cloudflare KV  (edge-replicated storage)      │
 │  • MAILBOX_STORE — mailbox + message JSON      │
-│  • RATE_LIMIT    — sliding window per IP        │
+│  • RATE_LIMIT    — sliding window per IP       │
 └────────────────────────────────────────────────┘
 
 Inbound mail (provider=webhook):
-   Email sender → SMTP → Cloudflare Email Routing → Worker
-                                              ↓ POST /api/v1/webhook/inbound
-                                              ↓ stored in MAILBOX_STORE
+   Email → SMTP → Cloudflare Email Routing → Worker
+                                      ↓ POST /api/v1/webhook/inbound
+                                      ↓ stored in MAILBOX_STORE
 ```
-
----
 
 ## 🚀 Quick Start
 
-### 1. Use the hosted instance
+**Use the hosted instance** — skip the setup, go to **[temp.yaoi.my.id](https://temp.yaoi.my.id)**, generate an inbox, done.
 
-Skip the setup — go to **https://temp.yaoi.my.id**, generate an inbox, done.
-
-### 2. Self-host on Cloudflare Pages
+**Self-host:**
 
 ```bash
 git clone https://github.com/TheyanzXD/my-temp.git
@@ -74,9 +77,7 @@ npm install
 
 Then follow the [Deployment Guide](#-deployment-guide) below.
 
----
-
-## 📡 API Endpoints
+## 📡 API Reference
 
 All non-stream endpoints follow the envelope:
 
@@ -88,7 +89,8 @@ All non-stream endpoints follow the envelope:
 { "success": false, "error": { "code": "INVALID_ADDRESS", "message": "...", "details": null } }
 ```
 
-### Core
+<details>
+<summary><b>Core</b></summary>
 
 | Method | Path | Description |
 |---|---|---|
@@ -96,40 +98,42 @@ All non-stream endpoints follow the envelope:
 | `GET` | `/api/v1/providers` | Active + supported providers |
 | `GET` | `/api/v1/stats` | Provider, domain counts, config |
 | `GET` | `/api/v1/domains` | Advertised domains (cached 5 min) |
+</details>
 
-### Mailbox
+<details>
+<summary><b>Mailbox</b></summary>
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/mailbox` | Create mailbox. Body: `{ username?, domain?, lifetimeMinutes? }` |
+| `POST` | `/api/v1/mailbox` | Create. Body: `{ username?, domain?, lifetimeMinutes? }` |
 | `GET` | `/api/v1/mailbox/{address}` | Mailbox metadata + messageCount |
-| `DELETE` | `/api/v1/mailbox/{address}` | Permanently delete mailbox + all messages |
+| `DELETE` | `/api/v1/mailbox/{address}` | Delete mailbox + all messages |
+</details>
 
-### Messages
+<details>
+<summary><b>Messages</b></summary>
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/v1/mailbox/{address}/messages` | List messages. Query: `?unread&limit&offset` |
-| `GET` | `/api/v1/mailbox/{address}/messages/{id}` | Full message body (sanitized HTML + text) |
+| `GET` | `/api/v1/mailbox/{address}/messages` | List. Query: `?unread&limit&offset` |
+| `GET` | `/api/v1/mailbox/{address}/messages/{id}` | Full body (sanitized HTML + text) |
 | `DELETE` | `/api/v1/mailbox/{address}/messages/{id}` | Delete one message |
-| `DELETE` | `/api/v1/mailbox/{address}/messages` | Delete all messages in a mailbox |
-| `POST` | `/api/v1/mailbox/{address}/mark-all-read` | Mark every unread message as read |
+| `DELETE` | `/api/v1/mailbox/{address}/messages` | Delete all messages |
+| `POST` | `/api/v1/mailbox/{address}/mark-all-read` | Mark every unread as read |
+</details>
 
-### Search & Stream
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/v1/mailbox/{address}/search?q=...` | Substring search across subject/sender/preview |
-| `GET` | `/api/v1/mailbox/{address}/export?format=jsonl|json` | Download all messages as a file |
-| `GET` | `/api/v1/mailbox/{address}/events` | Server-Sent Events stream (real-time inbox) |
-
-### Webhook
+<details>
+<summary><b>Search, Stream & Webhook</b></summary>
 
 | Method | Path | Description |
 |---|---|---|
+| `GET` | `/api/v1/mailbox/{address}/search?q=...` | Substring search (subject/sender/preview) |
+| `GET` | `/api/v1/mailbox/{address}/export?format=jsonl\|json` | Download all messages |
+| `GET` | `/api/v1/mailbox/{address}/events` | SSE stream — real-time inbox |
 | `POST` | `/api/v1/webhook/inbound` | Inbound email receiver (auth via `WEBHOOK_SECRET`) |
+</details>
 
-### Rate Limits
+**Rate limits**
 
 | Endpoint group | Limit |
 |---|---|
@@ -140,67 +144,66 @@ All non-stream endpoints follow the envelope:
 
 Over-quota → `HTTP 429` with `Retry-After` header.
 
----
-
 ## 🔌 Mail Providers
 
 Configure via `MAIL_PROVIDER` env var:
 
 | Provider | Inbound mail setup | Use case |
 |---|---|---|
-| `webhook` *(default)* | Wire Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain (e.g. `temp.yaoi.my.id`) |
+| `webhook` *(default)* | Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain |
 | `cloudflare` | Same as webhook | Alias for clarity |
 | `improvmx` | ImprovMX webhook → `/api/v1/webhook/inbound` | ImprovMX-managed domain |
 | `forwardemail` | ForwardEmail webhook → `/api/v1/webhook/inbound` | ForwardEmail-managed domain |
 | `mock` | None | Demo / local dev (seeded sample messages) |
-| `mailgw` | None | Uses free `mail.tm` / `mail.gw` public API |
+| `mailgw` | None | Free `mail.tm` / `mail.gw` public API |
 | `mailslurp` | None | MailSlurp enterprise (requires `MAIL_API_KEY`) |
 
-### Example: real inbound mail via Cloudflare Email Routing
+<details>
+<summary><b>Example: real inbound mail via Cloudflare Email Routing</b></summary>
 
 1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `temp.yaoi.my.id`
 2. `temp.yaoi.my.id` → **Email** → **Email Routing** → enable, add catch-all route
 3. Create a Worker (`email-routing-worker`):
 
-   ```js
-   export default {
-     async email(message, env) {
-       const raw = await new Response(message.raw).text();
-       await fetch('https://temp.yaoi.my.id/api/v1/webhook/inbound', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           'x-webhook-secret': env.WEBHOOK_SECRET
-         },
-         body: JSON.stringify({
-           to: message.to,
-           from: message.from,
-           subject: message.headers.get('subject') || '',
-           text: raw
-         })
-       });
-     }
-   };
-   ```
+```js
+export default {
+  async email(message, env) {
+    const raw = await new Response(message.raw).text();
+    await fetch('https://temp.yaoi.my.id/api/v1/webhook/inbound', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-webhook-secret': env.WEBHOOK_SECRET
+      },
+      body: JSON.stringify({
+        to: message.to,
+        from: message.from,
+        subject: message.headers.get('subject') || '',
+        text: raw
+      })
+    });
+  }
+};
+```
 
 4. Bind `WEBHOOK_SECRET` (same secret as the Pages app)
 5. Email Routing rule: `*@temp.yaoi.my.id` → `email-routing-worker`
 
-Now any mail to `your-alias@temp.yaoi.my.id` shows up in the inbox within 3 seconds (SSE poll interval).
+Mail to `your-alias@temp.yaoi.my.id` shows up in the inbox within 3 seconds (SSE poll interval).
 
----
+</details>
 
 ## 🛠️ Deployment Guide
 
 ### Prerequisites
 
 - Cloudflare account (free tier works)
-- Node.js 18+ and `npm` (no bun needed — see the note under Local Development)
-- A Cloudflare API token with:
+- Node.js 18+ and `npm`
+- Cloudflare API token with:
   - Account → Cloudflare Pages → **Edit**
   - Account → Workers KV Storage → **Edit**
   - Account → Account Settings → **Read**
-  - Zone → DNS → **Edit** *(only if you want auto-CNAME for the custom domain)*
+  - Zone → DNS → **Edit** *(only for auto-CNAME on custom domain)*
   - Zone → Zone Settings → **Read**
 
 ### Step 1 — Clone & install
@@ -213,24 +216,24 @@ npm install
 
 ### Step 2 — Authenticate wrangler
 
-**Option A — OAuth (interactive):**
 ```bash
-wrangler login
-```
+# Option A — OAuth (interactive)
+npx wrangler login
 
-**Option B — API token (CI / headless):**
-```bash
-export CLOUDFLARE_API_TOKEN=...   # create at https://dash.cloudflare.com/profile/api-tokens
-export CLOUDFLARE_ACCOUNT_ID=...  # right sidebar of the dashboard home
+# Option B — API token (CI / headless)
+export CLOUDFLARE_API_TOKEN=...
+export CLOUDFLARE_ACCOUNT_ID=...
 ```
 
 ### Step 3 — Create KV namespaces
 
 ```bash
-wrangler kv namespace create MAILBOX_STORE
-wrangler kv namespace create MAILBOX_STORE --preview
-wrangler kv namespace create RATE_LIMIT
-wrangler kv namespace create RATE_LIMIT --preview
+npm run kv:create
+# or manually:
+# npx wrangler kv namespace create MAILBOX_STORE
+# npx wrangler kv namespace create MAILBOX_STORE --preview
+# npx wrangler kv namespace create RATE_LIMIT
+# npx wrangler kv namespace create RATE_LIMIT --preview
 ```
 
 Copy the IDs into `wrangler.toml`:
@@ -247,9 +250,9 @@ id = "..."
 preview_id = "..."
 ```
 
-### Step 4 — Set non-secret variables (optional)
+### Step 4 — Set non-secret variables
 
-Defaults already point to `temp.yaoi.my.id`. To change the domain:
+Defaults point to `temp.yaoi.my.id`. To change:
 
 ```toml
 [vars]
@@ -257,47 +260,47 @@ MAIL_PROVIDER = "webhook"
 CUSTOM_DOMAINS = "your.domain"
 APP_NAME = "YourBrand"
 APP_URL = "https://your.domain"
+CORS_ALLOWED_ORIGINS = "https://your.domain"
 ```
 
-### Step 5 — Set secrets (optional, recommended for production)
+### Step 5 — Set secrets
 
 ```bash
-wrangler pages secret put WEBHOOK_SECRET --project-name my-temp
-wrangler pages secret put MAIL_API_KEY --project-name my-temp   # only if MAIL_PROVIDER=mailslurp
+npm run secret:set              # WEBHOOK_SECRET
+npm run secret:set:mail_api_key # only if MAIL_PROVIDER=mailslurp
 ```
+
+> ⚠️ Never put secrets in `wrangler.toml` `[vars]`. Use `wrangler pages secret put` instead.
 
 ### Step 6 — Deploy
 
 ```bash
-npm run deploy
-# equivalent to:
-#   npm run build
-#   wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp --commit-dirty=true
+npm run build    # build → .svelte-kit/cloudflare
+npm run deploy   # wrangler pages deploy → Cloudflare Pages
 ```
 
-On first deploy Cloudflare creates the `my-temp` Pages project. URL: `https://my-temp.pages.dev`.
+First deploy creates the `my-temp` Pages project. URL: `https://my-temp.pages.dev`.
 
-### Step 6b — Deploy via Git integration (dashboard)
+<details>
+<summary><b>Step 6b — Deploy via Git integration (dashboard)</b></summary>
 
-If you connect the repo in the dashboard instead of using the CLI, set the build
-configuration exactly like this:
+Connect the repo in the Cloudflare dashboard instead of CLI:
 
 | Setting | Value |
 |---|---|
 | **Framework preset** | SvelteKit |
 | **Build command** | `npm run build` |
 | **Build output directory** | `.svelte-kit/cloudflare` |
-| **Environment variables (Production)** | `NODE_VERSION` = `22` (or newer) |
+| **Environment variables (Production)** | `NODE_VERSION` = `22` |
 
-> ⚠️ **Do not set the build command to anything involving bun.** The Cloudflare build
-> image detects `bun.lock` and runs `bun install --frozen-lockfile`, which fails with
-> `Unknown lockfile version` because the image's bundled bun (1.2.x) is older than the
-> bun that generated the lockfile. This repo deliberately contains no `bun.lock` —
-> commit only `package-lock.json` and the build will succeed.
+> ⚠️ **Do not use bun.** The Cloudflare build image detects `bun.lock` and runs
+> `bun install --frozen-lockfile`, which fails with `Unknown lockfile version`
+> because the image's bundled bun (1.2.x) is older than the bun that wrote the
+> lockfile. This repo deliberately ships `package-lock.json` only.
+
+</details>
 
 ### Step 7 — Attach custom domain
-
-**Automatic (recommended — needs DNS write scope on token):**
 
 ```bash
 curl -X POST \
@@ -307,29 +310,21 @@ curl -X POST \
   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/my-temp/domains"
 ```
 
-**Manual:** Cloudflare Dashboard → `temp.yaoi.my.id` → **DNS** → add `CNAME @ → my-temp.pages.dev` (proxied) and `CNAME www → my-temp.pages.dev`.
-
----
+**Manual:** Dashboard → `temp.yaoi.my.id` → **DNS** → `CNAME @ → my-temp.pages.dev` (proxied).
 
 ## 🧪 Local Development
 
 ```bash
-cp .env.example .env       # optional
-npm run dev                # vite dev server with HMR
-npm run build              # production build → .svelte-kit/cloudflare
-npm run check              # svelte-check (typecheck)
-npm run preview            # preview the built site
+cp .env.example .env    # optional
+npm run dev             # vite dev server with HMR
+npm run build           # production build → .svelte-kit/cloudflare
+npm run check           # svelte-check (typecheck)
+npm run preview         # preview the built site
 ```
 
-> **Note:** Use `npm` (not `bun`) for Cloudflare Pages Git integration. The repo ships a
-> `package-lock.json` and no `bun.lock` on purpose — the Cloudflare build image's bundled
-> bun (1.2.x) cannot parse lockfiles written by newer bun versions and the build fails with
-> `Unknown lockfile version`. With `npm` + `package-lock.json` the build is fully
-> reproducible on both the build image and your machine.
-
-Without KV bindings (default in `vite dev`), the app falls back to in-memory shims so the UI still works — but state resets on server restart.
-
----
+> **Note:** Use `npm` (not `bun`). The repo ships `package-lock.json` and no
+> `bun.lock` on purpose. Without KV bindings (`vite dev`), the app falls back
+> to in-memory shims so the UI works, but state resets on server restart.
 
 ## 📂 Project Structure
 
@@ -339,56 +334,35 @@ my-temp/
 │   ├── lib/
 │   │   ├── components/      # Svelte 5 UI (Navbar, Generator, Inbox, Viewer)
 │   │   ├── server/
-│   │   │   ├── api/respond.ts        # Shared response helpers (ok/err/rateLimited/getIp)
+│   │   │   ├── api/respond.ts        # Shared response helpers
 │   │   │   ├── db.ts                 # KV-backed mailbox + rate-limit helpers
-│   │   │   ├── mail/                 # Mail providers (webhook / mock / mailgw / mailslurp)
+│   │   │   ├── mail/                 # Mail providers
 │   │   │   └── security/             # HTML sanitizer + KV rate limiter
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   └── utils/
 │   ├── routes/
-│   │   ├── api/
-│   │   │   ├── health/+server.ts
-│   │   │   └── v1/
-│   │   │       ├── domains/+server.ts
-│   │   │       ├── providers/+server.ts
-│   │   │       ├── stats/+server.ts
-│   │   │       ├── mailbox/+server.ts
-│   │   │       ├── mailbox/[address]/+server.ts
-│   │   │       ├── mailbox/[address]/messages/+server.ts
-│   │   │       ├── mailbox/[address]/messages/[id]/+server.ts
-│   │   │       ├── mailbox/[address]/events/+server.ts
-│   │   │       ├── mailbox/[address]/search/+server.ts
-│   │   │       ├── mailbox/[address]/export/+server.ts
-│   │   │       ├── mailbox/[address]/mark-all-read/+server.ts
-│   │   │       └── webhook/inbound/+server.ts
+│   │   ├── api/v1/                   # REST endpoints
 │   │   ├── api-docs/+page.svelte     # Interactive API explorer
-│   │   ├── faq/
-│   │   ├── privacy/
-│   │   ├── +layout.svelte
-│   │   └── +page.svelte
+│   │   ├── faq/ · privacy/
+│   │   └── +page.svelte              # Main inbox UI
 │   ├── hooks.server.ts
-│   └── app.d.ts             # Cloudflare env types (KVNamespace, Platform)
+│   └── app.d.ts                      # Cloudflare env types
 ├── static/
-├── wrangler.toml            # KV bindings + non-secret vars
+├── deploy.sh              # Self-contained deploy script
+├── wrangler.toml          # KV bindings + non-secret vars
 ├── svelte.config.js
 ├── vite.config.ts
-├── tsconfig.json
-├── package.json
-└── README.md
+└── package.json
 ```
-
----
 
 ## 🔒 Security
 
-- All rendered email HTML passes through `sanitize-html` with a strict tag/attribute allowlist.
-- No external script/style execution inside messages.
-- Per-IP KV-backed sliding-window rate limiter (configurable via `MAX_REQUESTS_PER_MINUTE`).
-- Inbound webhook authentication via `WEBHOOK_SECRET` (Bearer token).
-- Default security headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, etc.).
-- CORS allowed origins configurable (`CORS_ALLOWED_ORIGINS`).
-
----
+- Rendered email HTML passes `sanitize-html` with a strict tag/attribute allowlist
+- No external script/style execution inside messages
+- Per-IP KV-backed sliding-window rate limiter (`MAX_REQUESTS_PER_MINUTE`)
+- Inbound webhook auth via `WEBHOOK_SECRET` (Bearer token)
+- Default security headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, etc.)
+- CORS restricted to `CORS_ALLOWED_ORIGINS`
 
 ## 🤝 Contributing
 
@@ -400,18 +374,16 @@ PRs welcome. Notable areas:
 - PGP-aware message rendering
 - Multi-language UI
 
----
-
 ## 📄 License
 
 MIT — original work © [KyuuX444](https://github.com/KyuuX444), Cloudflare migration & API redesign © repo owner.
 
 ---
 
-## 🔗 Links
+<div align="center">
 
-- Live app: https://temp.yaoi.my.id
-- Interactive API docs: https://temp.yaoi.my.id/api-docs
-- Upstream fork: https://github.com/KyuuX444/kyzz-temp
-- Cloudflare Pages: https://developers.cloudflare.com/pages
-- SvelteKit + Cloudflare: https://kit.svelte.dev/docs/adapter-cloudflare
+**[⚡ Live app](https://temp.yaoi.my.id)** · **[📖 API Docs](https://temp.yaoi.my.id/api-docs)** · **[🐙 GitHub](https://github.com/TheyanzXD/my-temp)**
+
+Built with SvelteKit · Cloudflare Pages · Workers KV
+
+</div>
