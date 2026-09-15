@@ -3,7 +3,7 @@ compatibility_date = "2026-09-15"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
-# KV namespaces - create with: npm run kv:create
+# KV namespaces — create with: npm run kv:create
 # Then replace these placeholder IDs with the real ones from the output
 [[kv_namespaces]]
 binding = "MAILBOX_STORE"
@@ -15,8 +15,9 @@ binding = "RATE_LIMIT"
 id = "REPLACE_WITH_RATE_LIMIT_ID"
 preview_id = "REPLACE_WITH_RATE_LIMIT_PREVIEW_ID"
 
-# Default public environment variables (non-secret)
-# Override secrets via: npm run secret:set
+# Default public environment variables (non-secret).
+# Secrets (WEBHOOK_SECRET, MAIL_API_KEY, MAIL_API_URL) are set via:
+#   npm run secret:set   (uses `wrangler pages secret put`)
 [vars]
 MAIL_PROVIDER = "webhook"
 CUSTOM_DOMAINS = "temp.yaoi.my.id"
@@ -24,5 +25,4 @@ APP_NAME = "MyTemp"
 APP_URL = "https://temp.yaoi.my.id"
 MAILBOX_LIFETIME_MINUTES = "60"
 MAX_REQUESTS_PER_MINUTE = "120"
-CORS_ALLOWED_ORIGINS = "*"
-WEBHOOK_SECRET = ""
+CORS_ALLOWED_ORIGINS = "https://temp.yaoi.my.id"

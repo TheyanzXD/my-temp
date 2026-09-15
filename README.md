@@ -1,7 +1,7 @@
 # ⚡ MyTemp
 **High-performance disposable temporary email service — Cloudflare Pages Edition**
 
-Live at **https://yaoi.web.id** (or the preview URL `https://my-temp.pages.dev`)
+Live at **https://temp.yaoi.my.id** (or the preview URL `https://my-temp.pages.dev`)
 
 ---
 
@@ -15,14 +15,14 @@ It's a fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-a
 
 ## ✨ Features
 
-- 📬 **Instant inbox** — random address or custom alias (`alice@yaoi.web.id`), generated in milliseconds.
+- 📬 **Instant inbox** — random address or custom alias (`alice@temp.yaoi.my.id`), generated in milliseconds.
 - 🔄 **Real-time streaming** — Server-Sent Events inbox with auto-reconnect, no polling required.
 - 🔍 **Full-text search** — search across subject, sender, and preview bodies.
 - 📤 **Export & archive** — download your inbox as `jsonl` or `json` at any time.
 - 🛡️ **Strict sanitization** — every email body passes through `sanitize-html` with an allowlist before render.
 - 🚦 **Edge rate limiting** — KV-backed sliding-window, shared globally, no per-isolate drift.
 - 🔌 **6 mail providers** — webhook (default, real inbound), mock (demo), mailgw, mailslurp, ImprovMX, ForwardEmail.
-- 🌐 **Interactive REST API** — see the [live API docs](https://yaoi.web.id/api-docs) with a built-in "Try it" panel.
+- 🌐 **Interactive REST API** — see the [live API docs](https://temp.yaoi.my.id/api-docs) with a built-in "Try it" panel.
 - 🚀 **Zero servers** — deploys with one command; scales from zero to global in seconds.
 
 ---
@@ -62,7 +62,7 @@ Inbound mail (provider=webhook):
 
 ### 1. Use the hosted instance
 
-Skip the setup — go to **https://yaoi.web.id**, generate an inbox, done.
+Skip the setup — go to **https://temp.yaoi.my.id**, generate an inbox, done.
 
 ### 2. Self-host on Cloudflare Pages
 
@@ -148,7 +148,7 @@ Configure via `MAIL_PROVIDER` env var:
 
 | Provider | Inbound mail setup | Use case |
 |---|---|---|
-| `webhook` *(default)* | Wire Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain (e.g. `yaoi.web.id`) |
+| `webhook` *(default)* | Wire Cloudflare Email Routing → Worker → `POST /api/v1/webhook/inbound` | You own a domain (e.g. `temp.yaoi.my.id`) |
 | `cloudflare` | Same as webhook | Alias for clarity |
 | `improvmx` | ImprovMX webhook → `/api/v1/webhook/inbound` | ImprovMX-managed domain |
 | `forwardemail` | ForwardEmail webhook → `/api/v1/webhook/inbound` | ForwardEmail-managed domain |
@@ -158,15 +158,15 @@ Configure via `MAIL_PROVIDER` env var:
 
 ### Example: real inbound mail via Cloudflare Email Routing
 
-1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `yaoi.web.id`
-2. `yaoi.web.id` → **Email** → **Email Routing** → enable, add catch-all route
+1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `temp.yaoi.my.id`
+2. `temp.yaoi.my.id` → **Email** → **Email Routing** → enable, add catch-all route
 3. Create a Worker (`email-routing-worker`):
 
    ```js
    export default {
      async email(message, env) {
        const raw = await new Response(message.raw).text();
-       await fetch('https://yaoi.web.id/api/v1/webhook/inbound', {
+       await fetch('https://temp.yaoi.my.id/api/v1/webhook/inbound', {
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
@@ -184,9 +184,9 @@ Configure via `MAIL_PROVIDER` env var:
    ```
 
 4. Bind `WEBHOOK_SECRET` (same secret as the Pages app)
-5. Email Routing rule: `*@yaoi.web.id` → `email-routing-worker`
+5. Email Routing rule: `*@temp.yaoi.my.id` → `email-routing-worker`
 
-Now any mail to `your-alias@yaoi.web.id` shows up in the inbox within 3 seconds (SSE poll interval).
+Now any mail to `your-alias@temp.yaoi.my.id` shows up in the inbox within 3 seconds (SSE poll interval).
 
 ---
 
@@ -249,7 +249,7 @@ preview_id = "..."
 
 ### Step 4 — Set non-secret variables (optional)
 
-Defaults already point to `yaoi.web.id`. To change the domain:
+Defaults already point to `temp.yaoi.my.id`. To change the domain:
 
 ```toml
 [vars]
@@ -303,11 +303,11 @@ configuration exactly like this:
 curl -X POST \
   -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"yaoi.web.id"}' \
+  -d '{"name":"temp.yaoi.my.id"}' \
   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/my-temp/domains"
 ```
 
-**Manual:** Cloudflare Dashboard → `yaoi.web.id` → **DNS** → add `CNAME @ → my-temp.pages.dev` (proxied) and `CNAME www → my-temp.pages.dev`.
+**Manual:** Cloudflare Dashboard → `temp.yaoi.my.id` → **DNS** → add `CNAME @ → my-temp.pages.dev` (proxied) and `CNAME www → my-temp.pages.dev`.
 
 ---
 
@@ -410,8 +410,8 @@ MIT — original work © [KyuuX444](https://github.com/KyuuX444), Cloudflare mig
 
 ## 🔗 Links
 
-- Live app: https://yaoi.web.id
-- Interactive API docs: https://yaoi.web.id/api-docs
+- Live app: https://temp.yaoi.my.id
+- Interactive API docs: https://temp.yaoi.my.id/api-docs
 - Upstream fork: https://github.com/KyuuX444/kyzz-temp
 - Cloudflare Pages: https://developers.cloudflare.com/pages
 - SvelteKit + Cloudflare: https://kit.svelte.dev/docs/adapter-cloudflare

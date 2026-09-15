@@ -21,3 +21,9 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Bun — deliberately excluded: Cloudflare build image's bundled bun (1.2.x)
+# cannot parse lockfiles written by newer bun versions ("Unknown lockfile
+# version"). This repo uses npm + package-lock.json only.
+bun.lock
+bun.lockb
