@@ -10,7 +10,13 @@ export default {
 				include: ['/*'],
 				exclude: ['<all>']
 			},
-			fallback: 'index.html'
+			fallback: 'index.html',
+			platformProxy: {
+				configPath: 'wrangler.toml',
+				environment: undefined,
+				experimentalJsonConfig: false,
+				persist: './.wrangler/state'
+			}
 		})
 	}
 };
