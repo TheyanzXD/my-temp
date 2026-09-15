@@ -14,7 +14,7 @@ echo "🚀 Deploying MyTemp to Cloudflare Pages ($BRANCH)..."
 echo "📦 Building..."
 npm run build
 
-# Deploy
+# Deploy - MUST use 'pages deploy' subcommand, NOT 'deploy'
 if [[ "$BRANCH" == "preview" ]]; then
     echo "📋 Deploying to preview branch..."
     npx wrangler pages deploy "$BUILD_DIR" --project-name "$PROJECT_NAME" --branch preview --commit-dirty=true
@@ -25,3 +25,5 @@ fi
 
 echo "✅ Deployment complete!"
 echo "🔗 Check: https://dash.cloudflare.com/pages/view/$PROJECT_NAME"
+echo ""
+echo "⚠️  NOTE: Use 'wrangler pages deploy' (not 'wrangler deploy') for Pages projects"

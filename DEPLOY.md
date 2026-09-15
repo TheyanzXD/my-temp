@@ -163,3 +163,23 @@ jobs:
 ### Build Fails
 - Run `npm run check` for TypeScript errors
 - Clear cache: `rm -rf .svelte-kit node_modules && npm install`
+
+### "Missing entry-point to Worker script" Error
+**Cause:** Running `wrangler deploy` instead of `wrangler pages deploy`.
+
+**Fix:** Always use the `pages` subcommand:
+```bash
+# ❌ WRONG - this deploys as a Worker
+wrangler deploy
+
+# ✅ CORRECT - this deploys as Pages
+wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp
+```
+
+Or use the npm scripts (which use the correct command):
+```bash
+npm run deploy        # production
+npm run deploy:preview # preview
+```
+
+The project is a **Cloudflare Pages** project (SvelteKit + adapter-cloudflare), not a Worker. The `pages` subcommand is required.
