@@ -3,21 +3,16 @@ compatibility_date = "2026-09-15"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
-# KV namespaces — create with: npm run kv:create
-# Then replace these placeholder IDs with the real ones from the output
 [[kv_namespaces]]
 binding = "MAILBOX_STORE"
-id = "REPLACE_WITH_MAILBOX_STORE_ID"
-preview_id = "REPLACE_WITH_MAILBOX_STORE_PREVIEW_ID"
+id = "ed8d435120ce4931a364ffed852c6cb4"
+preview_id = "9aead75645c94a43a57abf0895632068"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_RATE_LIMIT_ID"
-preview_id = "REPLACE_WITH_RATE_LIMIT_PREVIEW_ID"
+id = "d0f29c72b09a43e4818d425a46ca1f9e"
+preview_id = "4d906e5aec2741aa833f5481ea160a07"
 
-# Default public environment variables (non-secret).
-# Secrets (WEBHOOK_SECRET, MAIL_API_KEY, MAIL_API_URL) are set via:
-#   npm run secret:set   (uses `wrangler pages secret put`)
 [vars]
 MAIL_PROVIDER = "webhook"
 CUSTOM_DOMAINS = "temp.yaoi.my.id"
