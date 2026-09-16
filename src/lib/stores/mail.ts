@@ -41,7 +41,7 @@ function createMailboxStore() {
 		if (typeof window === 'undefined' || !address) return;
 
 		try {
-			eventSource = new EventSource(`/api/mailbox/${encodeURIComponent(address)}/events`);
+			eventSource = new EventSource(`/api/v1/mailbox/${encodeURIComponent(address)}/events`);
 
 			eventSource.onopen = () => {
 				update((s) => ({ ...s, sseConnected: true }));
@@ -125,7 +125,7 @@ function createMailboxStore() {
 
 		fetchDomains: async () => {
 			try {
-				const res = await fetch('/api/domains');
+				const res = await fetch('/api/v1/domains');
 				const json = await res.json();
 				if (json.success && json.data.domains) {
 					update((s) => ({ ...s, domains: json.data.domains }));
@@ -138,7 +138,7 @@ function createMailboxStore() {
 		createMailbox: async (username?: string, domain?: string) => {
 			update((s) => ({ ...s, loading: true, error: null, selectedMessage: null }));
 			try {
-				const res = await fetch('/api/mailbox', {
+				const res = await fetch('/api/v1/mailbox', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ username, domain })
@@ -173,7 +173,7 @@ function createMailboxStore() {
 		fetchMailbox: async (address: string): Promise<boolean> => {
 			update((s) => ({ ...s, loading: true }));
 			try {
-				const res = await fetch(`/api/mailbox/${encodeURIComponent(address)}`);
+				const res = await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}`);
 				const json = await res.json();
 				if (!json.success || !json.data) {
 					return false;
@@ -201,7 +201,7 @@ function createMailboxStore() {
 			if (!address) return;
 
 			try {
-				const res = await fetch(`/api/mailbox/${encodeURIComponent(address)}/messages`);
+				const res = await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}/messages`);
 				const json = await res.json();
 				if (json.success && json.data.messages) {
 					update((s) => ({
@@ -227,7 +227,7 @@ function createMailboxStore() {
 			if (!address) return;
 
 			try {
-				const res = await fetch(`/api/mailbox/${encodeURIComponent(address)}/messages/${msgSummary.id}`);
+				const res = await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}/messages/${msgSummary.id}`);
 				const json = await res.json();
 				if (json.success && json.data) {
 					update((s) => ({
@@ -255,7 +255,7 @@ function createMailboxStore() {
 			if (!address) return;
 
 			try {
-				const res = await fetch(`/api/mailbox/${encodeURIComponent(address)}/messages/${messageId}`, {
+				const res = await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}/messages/${messageId}`, {
 					method: 'DELETE'
 				});
 				const json = await res.json();
@@ -283,7 +283,7 @@ function createMailboxStore() {
 
 			disconnectSSE();
 			try {
-				await fetch(`/api/mailbox/${encodeURIComponent(address)}`, { method: 'DELETE' });
+				await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}`, { method: 'DELETE' });
 				localStorage.removeItem('tempmail_current_address');
 				toasts.add({ title: 'Mailbox deleted', type: 'info' });
 				await mailboxStore.createMailbox();
