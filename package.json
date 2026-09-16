@@ -1,5 +1,5 @@
 {
-	"name": "my-temp",
+	"name": "yanzxd",
 	"private": true,
 	"version": "1.0.0",
 	"type": "module",
@@ -10,13 +10,13 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"deploy": "wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp --commit-dirty=true",
-		"deploy:preview": "wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp --branch preview --commit-dirty=true",
+		"deploy": "wrangler pages deploy .svelte-kit/cloudflare --project-name yanzxd --commit-dirty=true",
+		"deploy:preview": "wrangler pages deploy .svelte-kit/cloudflare --project-name yanzxd --branch preview --commit-dirty=true",
 		"kv:create": "wrangler kv:namespace create MAILBOX_STORE && wrangler kv:namespace create RATE_LIMIT",
 		"kv:create:preview": "wrangler kv:namespace create MAILBOX_STORE --preview && wrangler kv:namespace create RATE_LIMIT --preview",
-		"secret:set": "wrangler pages secret put WEBHOOK_SECRET --project-name my-temp",
-		"secret:set:mail_api_key": "wrangler pages secret put MAIL_API_KEY --project-name my-temp",
-		"secret:set:mail_api_url": "wrangler pages secret put MAIL_API_URL --project-name my-temp"
+		"secret:set": "wrangler pages secret put WEBHOOK_SECRET --project-name yanzxd",
+		"secret:set:mail_api_key": "wrangler pages secret put MAIL_API_KEY --project-name yanzxd",
+		"secret:set:mail_api_url": "wrangler pages secret put MAIL_API_URL --project-name yanzxd"
 	},
 	"dependencies": {
 		"clsx": "^2.1.1",

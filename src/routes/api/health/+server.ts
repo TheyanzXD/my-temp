@@ -6,7 +6,7 @@ export const GET: RequestHandler = async ({ platform, request }) => {
 	return json(
 		{
 			ok: true,
-			service: 'my-temp',
+			service: 'yanzxd',
 			version: '1.0.0',
 			timestamp: new Date().toISOString(),
 			colo: cfVer ?? 'unknown'

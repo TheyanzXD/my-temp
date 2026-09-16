@@ -70,8 +70,8 @@ Inbound mail (provider=webhook):
 **Self-host:**
 
 ```bash
-git clone https://github.com/TheyanzXD/my-temp.git
-cd my-temp
+git clone https://github.com/TheyanzXD/yanzxd.git
+cd yanzxd
 npm install
 ```
 
@@ -209,8 +209,8 @@ Mail to `your-alias@temp.yaoi.my.id` shows up in the inbox within 3 seconds (SSE
 ### Step 1 — Clone & install
 
 ```bash
-git clone https://github.com/TheyanzXD/my-temp.git
-cd my-temp
+git clone https://github.com/TheyanzXD/yanzxd.git
+cd yanzxd
 npm install
 ```
 
@@ -279,7 +279,7 @@ npm run build    # build → .svelte-kit/cloudflare
 npm run deploy   # wrangler pages deploy → Cloudflare Pages
 ```
 
-First deploy creates the `my-temp` Pages project. URL: `https://my-temp.pages.dev`.
+First deploy creates the `yanzxd` Pages project. URL: `https://yanzxd.pages.dev`.
 
 <details>
 <summary><b>Step 6b — Deploy via Git integration (dashboard)</b></summary>
@@ -307,10 +307,10 @@ curl -X POST \
   -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"temp.yaoi.my.id"}' \
-  "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/my-temp/domains"
+  "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yanzxd/domains"
 ```
 
-**Manual:** Dashboard → `temp.yaoi.my.id` → **DNS** → `CNAME @ → my-temp.pages.dev` (proxied).
+**Manual:** Dashboard → `temp.yaoi.my.id` → **DNS** → `CNAME @ → yanzxd.pages.dev` (proxied).
 
 ## 🧪 Local Development
 
@@ -329,7 +329,7 @@ npm run preview         # preview the built site
 ## 📂 Project Structure
 
 ```
-my-temp/
+yanzxd/
 ├── src/
 │   ├── lib/
 │   │   ├── components/      # Svelte 5 UI (Navbar, Generator, Inbox, Viewer)

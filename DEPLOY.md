@@ -56,11 +56,11 @@ Configured in `wrangler.toml` under `[vars]`:
 
 ```bash
 # Webhook authentication secret
-wrangler pages secret put WEBHOOK_SECRET --project-name my-temp
+wrangler pages secret put WEBHOOK_SECRET --project-name yanzxd
 
 # MailSlurp (if using)
-wrangler pages secret put MAIL_API_KEY --project-name my-temp
-wrangler pages secret put MAIL_API_URL --project-name my-temp
+wrangler pages secret put MAIL_API_KEY --project-name yanzxd
+wrangler pages secret put MAIL_API_URL --project-name yanzxd
 ```
 
 ## KV Namespaces
@@ -81,7 +81,7 @@ Then update `wrangler.toml` with the returned IDs.
 
 ## Custom Domain
 
-1. In Cloudflare Dashboard → Pages → my-temp → Custom domains
+1. In Cloudflare Dashboard → Pages → yanzxd → Custom domains
 2. Add `temp.yaoi.my.id` (or your domain)
 3. Ensure DNS points to Cloudflare Pages
 
@@ -139,7 +139,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: my-temp
+          projectName: yanzxd
           directory: .svelte-kit/cloudflare
           branch: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
 ```
@@ -173,7 +173,7 @@ jobs:
 wrangler deploy
 
 # ✅ CORRECT - this deploys as Pages
-wrangler pages deploy .svelte-kit/cloudflare --project-name my-temp
+wrangler pages deploy .svelte-kit/cloudflare --project-name yanzxd
 ```
 
 Or use the npm scripts (which use the correct command):

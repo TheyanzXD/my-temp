@@ -91,7 +91,7 @@ export class MailGwProvider implements MailProvider {
 		const cached = this.tokens.get(lower);
 		if (cached) return cached;
 
-		const pass = password || this.passwords.get(lower) || 'KyzzTemp#2026Secure';
+		const pass = password || this.passwords.get(lower) || 'YanzXD#2026Secure';
 		interface TokenResponse {
 			token: string;
 			id: string;
@@ -124,7 +124,7 @@ export class MailGwProvider implements MailProvider {
 		}
 
 		const address = `${username}@${domain}`.toLowerCase();
-		const password = 'KyzzTemp#' + Math.random().toString(36).substring(2, 10);
+		const password = 'YanzXD#' + Math.random().toString(36).substring(2, 10);
 		this.passwords.set(address, password);
 
 		interface CreateAccountResponse {

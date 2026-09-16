@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-PROJECT_NAME="my-temp"
+PROJECT_NAME="yanzxd"
 BUILD_DIR=".svelte-kit/cloudflare"
 BRANCH="${1:-production}"
 

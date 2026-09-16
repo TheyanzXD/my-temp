@@ -117,7 +117,7 @@
 			description: 'Liveness probe — no auth, no rate limit. Returns build version and timestamp.',
 			responseExample: `{
   "ok": true,
-  "service": "my-temp",
+  "service": "yanzxd",
   "version": "1.0.0",
   "timestamp": "2026-09-14T10:00:00.000Z",
   "commit": "110eb74"

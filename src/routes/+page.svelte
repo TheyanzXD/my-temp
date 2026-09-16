@@ -45,7 +45,7 @@
 </script>
 
 <svelte:head>
-	<title>Kyzz Temp — Temporary Disposable Email</title>
+	<title>YanzXD Temp — Temporary Disposable Email</title>
 	<meta name="description" content="Layanan temporary email instan, cepat, bersih, dan aman." />
 </svelte:head>
 

@@ -46,7 +46,7 @@
 				KT
 			</div>
 			<div class="flex flex-col">
-				<span class="tracking-tight text-base font-extrabold text-zinc-900 dark:text-white leading-none">Kyzz Temp</span>
+				<span class="tracking-tight text-base font-extrabold text-zinc-900 dark:text-white leading-none">YanzXD Temp</span>
 				<span class="text-[10px] text-zinc-400 font-medium leading-tight">Disposable Email</span>
 			</div>
 		</a>
