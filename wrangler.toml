@@ -15,9 +15,9 @@ preview_id = "4d906e5aec2741aa833f5481ea160a07"
 
 [vars]
 MAIL_PROVIDER = "webhook"
-CUSTOM_DOMAINS = "temp.yaoi.my.id"
+CUSTOM_DOMAINS = "temp.yaoi.web.id"
 APP_NAME = "MyTemp"
-APP_URL = "https://temp.yaoi.my.id"
+APP_URL = "https://temp.yaoi.web.id"
 MAILBOX_LIFETIME_MINUTES = "60"
 MAX_REQUESTS_PER_MINUTE = "120"
-CORS_ALLOWED_ORIGINS = "https://temp.yaoi.my.id"
+CORS_ALLOWED_ORIGINS = "https://temp.yaoi.web.id"
