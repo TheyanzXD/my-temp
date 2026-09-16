@@ -6,7 +6,9 @@
 
 declare global {
 	// Minimal Cloudflare Workers ambient types (subset we actually use).
-	// If you install `@cloudflare/workers-types`, delete this block.
+	// D1Database lives here so the ambient platform type in db.ts resolves
+	// without pulling all of @cloudflare/workers-types into the root scope
+	// (which shadows node/web lib types and breaks 46 unrelated checks).
 	interface KVNamespace {
 		get(key: string, options?: { type?: 'text' | 'json' | 'arrayBuffer' | 'stream' }): Promise<string | null>;
 		get<T>(key: string, options: { type: 'json' }): Promise<T | null>;
@@ -21,6 +23,28 @@ declare global {
 			cursor?: string;
 			list_complete: boolean;
 		}>;
+	}
+
+	// D1 (SQLite) ambient type — subset used by db.ts. Only the pieces the app
+	// calls; full types ship in @cloudflare/workers-types but are not referenced
+	// from the root scope (see comment above on KVNamespace).
+	interface D1Result<T = unknown> {
+		results?: T[];
+		success: boolean;
+		meta?: unknown;
+	}
+
+	interface D1PreparedStatement {
+		bind(...values: unknown[]): D1PreparedStatement;
+		first<T = unknown>(): Promise<T | null>;
+		all<T = unknown>(): Promise<D1Result<T>>;
+		run<T = unknown>(): Promise<D1Result<T>>;
+	}
+
+	interface D1Database {
+		prepare(query: string): D1PreparedStatement;
+		batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
+		exec(query: string): Promise<unknown>;
 	}
 
 	interface IncomingRequestCfProperties {
@@ -47,6 +71,7 @@ declare global {
 			env?: {
 				MAILBOX_STORE?: KVNamespace;
 				RATE_LIMIT?: KVNamespace;
+				MAIL_DB?: D1Database;
 				MAIL_PROVIDER?: string;
 				MAIL_API_URL?: string;
 				MAIL_API_KEY?: string;
@@ -69,6 +94,7 @@ declare global {
 		interface Env {
 			MAILBOX_STORE?: KVNamespace;
 			RATE_LIMIT?: KVNamespace;
+			MAIL_DB?: D1Database;
 			MAIL_PROVIDER?: string;
 			MAIL_API_URL?: string;
 			MAIL_API_KEY?: string;

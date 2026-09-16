@@ -1,6 +1,7 @@
 // src/lib/server/db.ts
-// Cloudflare KV-backed storage helpers.
-// In dev (vite dev), the bindings may be missing; we fall back to a local
+// Cloudflare D1 (SQLite) storage helpers.
+// Replaces KV: D1 free plan allows 5M writes/day vs KV's 1k/day.
+// In dev (vite dev), the binding may be missing; we fall back to a local
 // in-memory shim so the UI still works for local development.
 
 import type { Mailbox, EmailMessageDetail } from '$lib/server/mail/types';
@@ -8,9 +9,10 @@ import type { Mailbox, EmailMessageDetail } from '$lib/server/mail/types';
 export interface MailPlatform {
 	MAILBOX_STORE?: KVNamespace;
 	RATE_LIMIT?: KVNamespace;
+	MAIL_DB?: D1Database;
 }
 
-// ---------- In-memory fallback (dev / when KV not bound) ----------
+// ---------- In-memory fallback (dev / when D1 not bound) ----------
 
 interface MemoryKV {
 	get(key: string): Promise<string | null>;
@@ -57,27 +59,70 @@ class MemoryKVImpl implements MemoryKV {
 	}
 }
 
-// Shared dev-only fallback stores, so they survive across requests in the
-// vite dev process but never leak into production.
-const devMailStore = new MemoryKVImpl();
-const devRateStore = new MemoryKVImpl();
+// Shared dev-only fallback store, survives across requests in the vite dev
+// process but never leaks into production.
+const devStore = new MemoryKVImpl();
+
+// ---------- D1-backed KV shim ----------
+
+const now = () => Math.floor(Date.now() / 1000);
+
+class D1KVImpl implements MemoryKV {
+	constructor(private db: D1Database) {}
+
+	async get(key: string) {
+		// Lazy expiry: expired rows are invisible here and reaped on writes.
+		const r = await this.db
+			.prepare('SELECT value FROM kv WHERE key = ? AND (expires_at IS NULL OR expires_at > ?)')
+			.bind(key, now())
+			.first<{ value: string }>();
+		return r?.value ?? null;
+	}
+
+	async put(key: string, value: string, opts?: { expirationTtl?: number; expiration?: number }) {
+		let expiresAt: number | null = null;
+		if (opts?.expirationTtl) expiresAt = now() + opts.expirationTtl;
+		if (opts?.expiration) expiresAt = opts.expiration;
+		await this.db
+			.prepare('INSERT OR REPLACE INTO kv (key, value, expires_at, updated) VALUES (?, ?, ?, ?)')
+			.bind(key, value, expiresAt, now())
+			.run();
+	}
+
+	async delete(key: string) {
+		await this.db.prepare('DELETE FROM kv WHERE key = ?').bind(key).run();
+	}
+
+	async list(opts?: { prefix?: string }) {
+		const prefix = opts?.prefix ?? '';
+		const r = await this.db
+			.prepare(
+				'SELECT key AS name FROM kv WHERE key LIKE ? AND (expires_at IS NULL OR expires_at > ?)'
+			)
+			.bind(prefix + '%', now())
+			.all<{ name: string }>();
+		return { keys: r.results ?? [] };
+	}
+}
 
 // ---------- Public helpers ----------
 
-function pickKV(platform: App.Platform | undefined, which: 'mail' | 'rate'): KVNamespace | MemoryKV {
+function pickStore(platform: App.Platform | undefined, which: 'mail' | 'rate'): MemoryKV {
 	const env = platform?.env as MailPlatform | undefined;
-	const binding = which === 'mail' ? env?.MAILBOX_STORE : env?.RATE_LIMIT;
-	if (binding) return binding as KVNamespace;
+	if (env?.MAIL_DB) return new D1KVImpl(env.MAIL_DB);
+	// Legacy fallback if only KV is bound (kept until full cutover)
+	if (which === 'mail' && env?.MAILBOX_STORE) return env.MAILBOX_STORE as unknown as MemoryKV;
+	if (which === 'rate' && env?.RATE_LIMIT) return env.RATE_LIMIT as unknown as MemoryKV;
 	// Dev fallback
-	return (which === 'mail' ? devMailStore : devRateStore) as unknown as KVNamespace;
+	return devStore;
 }
 
-export function getMailKV(platform: App.Platform | undefined): KVNamespace | MemoryKV {
-	return pickKV(platform, 'mail');
+export function getMailKV(platform: App.Platform | undefined): MemoryKV {
+	return pickStore(platform, 'mail');
 }
 
-export function getRateKV(platform: App.Platform | undefined): KVNamespace | MemoryKV {
-	return pickKV(platform, 'rate');
+export function getRateKV(platform: App.Platform | undefined): MemoryKV {
+	return pickStore(platform, 'rate');
 }
 
 // ---------- Mailbox storage ----------
@@ -89,8 +134,8 @@ const MAILBOX_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 export async function putMailbox(platform: App.Platform | undefined, mb: Mailbox): Promise<void> {
 	const kv = getMailKV(platform);
-	// Fail-safe: a KV write error (quota exhausted, transient) must not 500
-	// mailbox creation. The mailbox is returned to the caller either way.
+	// Fail-safe: a write error (transient) must not 500 mailbox creation.
+	// The mailbox is returned to the caller either way.
 	try {
 		await kv.put(MAILBOX_KEY(mb.address), JSON.stringify(mb), {
 			expirationTtl: MAILBOX_TTL_SECONDS
@@ -134,7 +179,7 @@ export async function appendMessageKV(
 	try {
 		await kv.put(key, JSON.stringify(trimmed), { expirationTtl: MESSAGES_TTL_SECONDS });
 	} catch {
-		// quota exhausted or transient — message still returned to caller
+		// transient — message still returned to caller
 	}
 }
 
@@ -153,16 +198,17 @@ export async function deleteMessageKV(
 	messageId: string
 ): Promise<boolean> {
 	const kv = getMailKV(platform);
-	const raw = await kv.get(MESSAGES_KEY(address));
+	const key = MESSAGES_KEY(address);
+	const raw = await kv.get(key);
 	if (!raw) return false;
 	const list: EmailMessageDetail[] = safeJsonArray(raw);
 	const idx = list.findIndex((m) => m.id === messageId);
 	if (idx === -1) return false;
 	list.splice(idx, 1);
 	try {
-		await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
+		await kv.put(key, JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
 	} catch {
-		// quota exhausted — report deletion by id even if persistence lagged
+		// transient — report deletion by id even if persistence lagged
 	}
 	return true;
 }
@@ -182,7 +228,7 @@ export async function updateMessageReadKV(
 	try {
 		await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
 	} catch {
-		// quota exhausted — still return the message to the caller
+		// transient — still return the message to the caller
 	}
 	return msg;
 }
@@ -208,32 +254,32 @@ export async function rateLimitHit(
 ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
 	const kv = getRateKV(platform);
 	const key = RATE_KEY(ip);
-	const now = Math.floor(Date.now() / 1000);
+	const n = now();
 	const raw = await kv.get(key);
-	let entry: { count: number; resetTime: number } = { count: 0, resetTime: now + windowSec };
+	let entry: { count: number; resetTime: number } = { count: 0, resetTime: n + windowSec };
 
 	if (raw) {
 		try {
 			entry = JSON.parse(raw);
 		} catch {
-			entry = { count: 0, resetTime: now + windowSec };
+			entry = { count: 0, resetTime: n + windowSec };
 		}
 	}
 
-	if (entry.resetTime < now) {
-		entry = { count: 0, resetTime: now + windowSec };
+	if (entry.resetTime < n) {
+		entry = { count: 0, resetTime: n + windowSec };
 	}
 
 	entry.count += 1;
 	const allowed = entry.count <= maxRequests;
 	const remaining = Math.max(0, maxRequests - entry.count);
 
-	// Fail-open: a KV write error (quota exhausted, transient) must never take
-	// down the request. Rate limiting is a soft guard here.
+	// Fail-open: a write error must never take down the request.
+	// Rate limiting is a soft guard here.
 	try {
 		await kv.put(key, JSON.stringify(entry), { expirationTtl: windowSec });
 	} catch {
-		return { allowed: true, remaining: maxRequests, resetTime: now + windowSec };
+		return { allowed: true, remaining: maxRequests, resetTime: n + windowSec };
 	}
 
 	return { allowed, remaining, resetTime: entry.resetTime };

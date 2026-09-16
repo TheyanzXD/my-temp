@@ -3,6 +3,11 @@ compatibility_date = "2026-09-15"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
+[[d1_databases]]
+binding = "MAIL_DB"
+database_name = "yanzxd_mail"
+database_id = "96dafa8e-9029-41f8-b49c-d171f8d96720"
+
 [[kv_namespaces]]
 binding = "MAILBOX_STORE"
 id = "ed8d435120ce4931a364ffed852c6cb4"

@@ -25,6 +25,7 @@
 		"tailwind-merge": "^3.7.0"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "^5.20260916.1",
 		"@sveltejs/adapter-cloudflare": "^7.0.4",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
