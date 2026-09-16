@@ -4,8 +4,8 @@
 
 **Disposable temporary email — serverless, real-time, on Cloudflare's edge.**
 
-[![Live](https://img.shields.io/badge/Live-temp.yaoi.web.id-6366f1?style=for-the-badge&logo=cloudflare&logoColor=white)](https://temp.yaoi.web.id)
-[![API Docs](https://img.shields.io/badge/API_Docs-Interactive-22c55e?style=for-the-badge&logo=swagger&logoColor=white)](https://temp.yaoi.web.id/api-docs)
+[![Live](https://img.shields.io/badge/Live-yaoi.my.id-6366f1?style=for-the-badge&logo=cloudflare&logoColor=white)](https://yaoi.my.id)
+[![API Docs](https://img.shields.io/badge/API_Docs-Interactive-22c55e?style=for-the-badge&logo=swagger&logoColor=white)](https://yaoi.my.id/api-docs)
 [![License](https://img.shields.io/badge/License-MIT-71717a?style=for-the-badge)](./LICENSE)
 
 SvelteKit · Svelte 5 · Cloudflare Pages · Workers KV · TailwindCSS v4
@@ -24,7 +24,7 @@ Fork of [KyuuX444/kyzz-temp](https://github.com/KyuuX444/kyzz-temp), re-architec
 
 | | Feature | Details |
 |---|---|---|
-| 📬 | **Instant inbox** | Random address or custom alias (`alice@temp.yaoi.web.id`), in milliseconds |
+| 📬 | **Instant inbox** | Random address or custom alias (`alice@yaoi.my.id`), in milliseconds |
 | 🔄 | **Real-time streaming** | SSE inbox with auto-reconnect — no polling |
 | 🔍 | **Full-text search** | Search across subject, sender, and preview bodies |
 | 📤 | **Export & archive** | Download your inbox as `jsonl` or `json` |
@@ -65,7 +65,7 @@ Inbound mail (provider=webhook):
 
 ## 🚀 Quick Start
 
-**Use the hosted instance** — skip the setup, go to **[temp.yaoi.web.id](https://temp.yaoi.web.id)**, generate an inbox, done.
+**Use the hosted instance** — skip the setup, go to **[yaoi.my.id](https://yaoi.my.id)**, generate an inbox, done.
 
 **Self-host:**
 
@@ -161,15 +161,15 @@ Configure via `MAIL_PROVIDER` env var:
 <details>
 <summary><b>Example: real inbound mail via Cloudflare Email Routing</b></summary>
 
-1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `temp.yaoi.web.id`
-2. `temp.yaoi.web.id` → **Email** → **Email Routing** → enable, add catch-all route
+1. Cloudflare Dashboard → **Workers & Pages** → `my-temp` → **Custom domains** → attach `yaoi.my.id`
+2. `yaoi.my.id` → **Email** → **Email Routing** → enable, add catch-all route
 3. Create a Worker (`email-routing-worker`):
 
 ```js
 export default {
   async email(message, env) {
     const raw = await new Response(message.raw).text();
-    await fetch('https://temp.yaoi.web.id/api/v1/webhook/inbound', {
+    await fetch('https://yaoi.my.id/api/v1/webhook/inbound', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -187,9 +187,9 @@ export default {
 ```
 
 4. Bind `WEBHOOK_SECRET` (same secret as the Pages app)
-5. Email Routing rule: `*@temp.yaoi.web.id` → `email-routing-worker`
+5. Email Routing rule: `*@yaoi.my.id` → `email-routing-worker`
 
-Mail to `your-alias@temp.yaoi.web.id` shows up in the inbox within 3 seconds (SSE poll interval).
+Mail to `your-alias@yaoi.my.id` shows up in the inbox within 3 seconds (SSE poll interval).
 
 </details>
 
@@ -252,7 +252,7 @@ preview_id = "..."
 
 ### Step 4 — Set non-secret variables
 
-Defaults point to `temp.yaoi.web.id`. To change:
+Defaults point to `yaoi.my.id`. To change:
 
 ```toml
 [vars]
@@ -306,11 +306,11 @@ Connect the repo in the Cloudflare dashboard instead of CLI:
 curl -X POST \
   -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"temp.yaoi.web.id"}' \
+  -d '{"name":"yaoi.my.id"}' \
   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yanzxd/domains"
 ```
 
-**Manual:** Dashboard → `temp.yaoi.web.id` → **DNS** → `CNAME @ → yanzxd.pages.dev` (proxied).
+**Manual:** Dashboard → `yaoi.my.id` → **DNS** → `CNAME @ → yanzxd.pages.dev` (proxied).
 
 ## 🧪 Local Development
 
@@ -382,7 +382,7 @@ MIT — original work © [KyuuX444](https://github.com/KyuuX444), Cloudflare mig
 
 <div align="center">
 
-**[⚡ Live app](https://temp.yaoi.web.id)** · **[📖 API Docs](https://temp.yaoi.web.id/api-docs)** · **[🐙 GitHub](https://github.com/TheyanzXD/my-temp)**
+**[⚡ Live app](https://yaoi.my.id)** · **[📖 API Docs](https://yaoi.my.id/api-docs)** · **[🐙 GitHub](https://github.com/TheyanzXD/my-temp)**
 
 Built with SvelteKit · Cloudflare Pages · Workers KV
 

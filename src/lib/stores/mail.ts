@@ -27,6 +27,29 @@ function createMailboxStore() {
 
 	let eventSource: EventSource | null = null;
 	let currentAddress: string | null = null;
+	let pollingTimer: ReturnType<typeof setInterval> | null = null;
+
+	const handleIncomingMessages = (newMessages: EmailMessageSummary[]) => {
+		update((s) => {
+			const prevCount = s.messages.length;
+			const newCount = newMessages.length;
+			if (newCount > prevCount && prevCount > 0) {
+				toasts.add({
+					title: 'New email received!',
+					description: newMessages[0]?.subject || 'Check your inbox',
+					type: 'info'
+				});
+
+				if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+					new Notification('New TempMail Received', {
+						body: newMessages[0]?.subject || 'New message in your temporary inbox',
+						icon: '/favicon.svg'
+					});
+				}
+			}
+			return { ...s, messages: newMessages, messagesLoading: false };
+		});
+	};
 
 	const disconnectSSE = () => {
 		if (eventSource) {
@@ -36,9 +59,36 @@ function createMailboxStore() {
 		update((s) => ({ ...s, sseConnected: false }));
 	};
 
+	const stopPolling = () => {
+		if (pollingTimer) {
+			clearInterval(pollingTimer);
+			pollingTimer = null;
+		}
+	};
+
+	const startPolling = (address: string) => {
+		stopPolling();
+		if (typeof window === 'undefined' || !address) return;
+		// Poll every 4s as fallback/supplement to SSE
+		pollingTimer = setInterval(async () => {
+			if (!currentAddress) return;
+			try {
+				const res = await fetch(`/api/v1/mailbox/${encodeURIComponent(currentAddress)}/messages`);
+				const json = await res.json();
+				if (json.success && Array.isArray(json.data?.messages)) {
+					handleIncomingMessages(json.data.messages);
+				}
+			} catch {
+				// ignore transient network glitch in background poll
+			}
+		}, 4000);
+	};
+
 	const connectSSE = (address: string) => {
 		disconnectSSE();
 		if (typeof window === 'undefined' || !address) return;
+
+		startPolling(address);
 
 		try {
 			eventSource = new EventSource(`/api/v1/mailbox/${encodeURIComponent(address)}/events`);
@@ -50,30 +100,11 @@ function createMailboxStore() {
 			eventSource.addEventListener('messages', (event) => {
 				try {
 					const data = JSON.parse(event.data);
-					if (data.messages) {
-						update((s) => {
-							const prevCount = s.messages.length;
-							const newCount = data.messages.length;
-							if (newCount > prevCount && prevCount > 0) {
-								toasts.add({
-									title: 'New email received!',
-									description: data.messages[0]?.subject || 'Check your inbox',
-									type: 'info'
-								});
-
-
-								if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-									new Notification('New TempMail Received', {
-										body: data.messages[0]?.subject || 'New message in your temporary inbox',
-										icon: '/favicon.svg'
-									});
-								}
-							}
-							return { ...s, messages: data.messages, messagesLoading: false };
-						});
+					if (data.messages && Array.isArray(data.messages)) {
+						handleIncomingMessages(data.messages);
 					}
 				} catch {
-
+					// noop
 				}
 			});
 
@@ -85,13 +116,12 @@ function createMailboxStore() {
 						mailboxStore.createMailbox();
 					}
 				} catch {
-
+					// noop
 				}
 			});
 
 			eventSource.onerror = () => {
 				update((s) => ({ ...s, sseConnected: false }));
-
 			};
 		} catch {
 			update((s) => ({ ...s, sseConnected: false }));
@@ -104,13 +134,18 @@ function createMailboxStore() {
 		init: async () => {
 			if (typeof window === 'undefined') return;
 
-
 			if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
 				Notification.requestPermission();
 			}
 
-			await mailboxStore.fetchDomains();
+			// Add visibility change listener to refresh instantly when returning to tab
+			document.addEventListener('visibilitychange', () => {
+				if (document.visibilityState === 'visible' && currentAddress) {
+					mailboxStore.fetchMessages();
+				}
+			});
 
+			await mailboxStore.fetchDomains();
 
 			const saved = localStorage.getItem('tempmail_current_address');
 			if (saved) {
@@ -282,6 +317,7 @@ function createMailboxStore() {
 			if (!address) return;
 
 			disconnectSSE();
+			stopPolling();
 			try {
 				await fetch(`/api/v1/mailbox/${encodeURIComponent(address)}`, { method: 'DELETE' });
 				localStorage.removeItem('tempmail_current_address');
@@ -294,6 +330,7 @@ function createMailboxStore() {
 
 		destroy: () => {
 			disconnectSSE();
+			stopPolling();
 		}
 	};
 

@@ -5,14 +5,17 @@ import { MailGwProvider } from './mailgw-provider';
 import { WebhookMailProvider } from './webhook-provider';
 
 let cachedProvider: MailProvider | null = null;
+let cachedProviderType: string | null = null;
 
 export function getMailProvider(platform?: App.Platform): MailProvider {
-	if (!cachedProvider) {
-		const providerType = (platform?.env?.MAIL_PROVIDER || 'mock').toLowerCase();
-		const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.web.id')
-			.split(',')
-			.map((d) => d.trim())
-			.filter(Boolean);
+	const providerType = (platform?.env?.MAIL_PROVIDER || 'webhook').toLowerCase();
+	const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.my.id')
+		.split(',')
+		.map((d) => d.trim())
+		.filter(Boolean);
+
+	if (!cachedProvider || cachedProviderType !== providerType) {
+		cachedProviderType = providerType;
 
 		switch (providerType) {
 			case 'mailgw':
@@ -46,11 +49,16 @@ export function getMailProvider(platform?: App.Platform): MailProvider {
 		}
 	}
 
-	// Per-call: bind platform so KV-backed providers can read bindings.
-	// Providers that don't need platform simply ignore the call.
-	const maybeBind = cachedProvider as unknown as { bind?: (p: App.Platform | undefined) => void };
+	// Per-call: bind platform and update domains so KV-backed providers stay current
+	const maybeBind = cachedProvider as unknown as {
+		bind?: (p: App.Platform | undefined) => void;
+		setDomains?: (d: string[]) => void;
+	};
 	if (typeof maybeBind.bind === 'function') {
 		maybeBind.bind(platform);
+	}
+	if (typeof maybeBind.setDomains === 'function' && customDomains.length > 0) {
+		maybeBind.setDomains(customDomains);
 	}
 
 	return cachedProvider;

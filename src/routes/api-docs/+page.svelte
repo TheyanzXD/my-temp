@@ -137,7 +137,7 @@
       { "id": "webhook", "name": "Cloudflare Email Routing / Webhook", "needs": "Cloudflare Email Routing or ImprovMX/ForwardEmail" },
       { "id": "mock", "name": "KV-backed Demo", "needs": "none" }
     ],
-    "customDomains": ["yaoi.web.id"]
+    "customDomains": ["yaoi.my.id"]
   }
 }`
 		},
@@ -155,7 +155,7 @@
     "config": {
       "maxRequestsPerMinute": 120,
       "mailboxLifetimeMinutes": 60,
-      "customDomains": ["yaoi.web.id"]
+      "customDomains": ["yaoi.my.id"]
     },
     "uptime": { "timestamp": "2026-09-14T10:00:00.000Z" }
   }
@@ -171,7 +171,7 @@
   "success": true,
   "data": {
     "domains": [
-      { "domain": "yaoi.web.id", "status": "online", "availability": true, "mxStatus": "active", "lastChecked": "2026-09-14T10:00:00.000Z" }
+      { "domain": "yaoi.my.id", "status": "online", "availability": true, "mxStatus": "active", "lastChecked": "2026-09-14T10:00:00.000Z" }
     ],
     "count": 1
   }
@@ -187,16 +187,16 @@
 			description: 'Create a new disposable mailbox. Username is optional (random if omitted). Domain is optional (first available if omitted). lifetimeMinutes (1-1440) overrides the default 60-minute expiry.',
 			params: [
 				{ name: 'username', in: 'body', type: 'string', example: 'alice', description: 'Optional. 2-30 chars; alphanumeric, dots, hyphens, underscores only.' },
-				{ name: 'domain', in: 'body', type: 'string', example: 'yaoi.web.id', description: 'Optional. Must match one of the advertised domains.' },
+				{ name: 'domain', in: 'body', type: 'string', example: 'yaoi.my.id', description: 'Optional. Must match one of the advertised domains.' },
 				{ name: 'lifetimeMinutes', in: 'body', type: 'number', example: '120', description: 'Optional. 1-1440. Default: 60.' }
 			],
-			bodyExample: `{\n  "username": "demo",\n  "domain": "yaoi.web.id",\n  "lifetimeMinutes": 60\n}`,
+			bodyExample: `{\n  "username": "demo",\n  "domain": "yaoi.my.id",\n  "lifetimeMinutes": 60\n}`,
 			responseExample: `{
   "success": true,
   "data": {
     "id": "mb_hook_abc1234",
-    "address": "demo@yaoi.web.id",
-    "domain": "yaoi.web.id",
+    "address": "demo@yaoi.my.id",
+    "domain": "yaoi.my.id",
     "createdAt": "2026-09-14T10:00:00.000Z",
     "expiresAt": "2026-09-14T11:00:00.000Z",
     "messageCount": 0
@@ -210,14 +210,14 @@
 			path: '/api/v1/mailbox/{address}',
 			description: 'Fetch mailbox metadata (id, expiry, messageCount). Returns 404 once expired.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' }
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' }
 			],
 			responseExample: `{
   "success": true,
   "data": {
     "id": "mb_hook_abc1234",
-    "address": "demo@yaoi.web.id",
-    "domain": "yaoi.web.id",
+    "address": "demo@yaoi.my.id",
+    "domain": "yaoi.my.id",
     "createdAt": "2026-09-14T10:00:00.000Z",
     "expiresAt": "2026-09-14T11:00:00.000Z",
     "messageCount": 2
@@ -230,8 +230,8 @@
 			method: 'DELETE',
 			path: '/api/v1/mailbox/{address}',
 			description: 'Permanently delete a mailbox and all its stored messages.',
-			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' }],
-			responseExample: `{ "success": true, "data": { "deleted": true, "address": "demo@yaoi.web.id" } }`
+			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' }],
+			responseExample: `{ "success": true, "data": { "deleted": true, "address": "demo@yaoi.my.id" } }`
 		},
 
 		// ────────── Messages ──────────
@@ -242,7 +242,7 @@
 			path: '/api/v1/mailbox/{address}/messages',
 			description: 'List messages for a mailbox. Supports pagination and unread filter.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' },
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' },
 				{ name: 'unread', in: 'query', type: 'boolean', example: 'true', description: 'Only return unread messages.' },
 				{ name: 'limit', in: 'query', type: 'number', example: '50', description: 'Cap to N messages. Max 200.', defaultValue: '200' },
 				{ name: 'offset', in: 'query', type: 'number', example: '0', description: 'Skip first N messages.', defaultValue: '0' }
@@ -250,7 +250,7 @@
 			responseExample: `{
   "success": true,
   "data": {
-    "address": "demo@yaoi.web.id",
+    "address": "demo@yaoi.my.id",
     "total": 2,
     "count": 2,
     "offset": 0,
@@ -260,9 +260,9 @@
       {
         "id": "msg_inbound_xyz",
         "mailboxId": "mb_hook_abc1234",
-        "mailboxAddress": "demo@yaoi.web.id",
+        "mailboxAddress": "demo@yaoi.my.id",
         "from": { "name": "GitHub Security", "address": "noreply@github.com" },
-        "to": [{ "address": "demo@yaoi.web.id" }],
+        "to": [{ "address": "demo@yaoi.my.id" }],
         "subject": "Your verification code",
         "preview": "Please use the following verification code...",
         "receivedAt": "2026-09-14T10:01:00.000Z",
@@ -280,7 +280,7 @@
 			path: '/api/v1/mailbox/{address}/messages/{id}',
 			description: 'Fetch full message detail including sanitized HTML body and attachment list.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' },
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' },
 				{ name: 'id', in: 'path', type: 'string', required: true, example: 'msg_inbound_xyz', description: 'Message ID.' }
 			],
 			responseExample: `{
@@ -306,7 +306,7 @@
 			path: '/api/v1/mailbox/{address}/messages/{id}',
 			description: 'Delete one message. Mailbox stays alive.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' },
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' },
 				{ name: 'id', in: 'path', type: 'string', required: true, example: 'msg_inbound_xyz', description: 'Message ID.' }
 			],
 			responseExample: `{ "success": true, "data": { "deleted": true, "id": "msg_inbound_xyz" } }`
@@ -317,8 +317,8 @@
 			method: 'DELETE',
 			path: '/api/v1/mailbox/{address}/messages',
 			description: 'Delete every message in a mailbox. Mailbox stays alive.',
-			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' }],
-			responseExample: `{ "success": true, "data": { "address": "demo@yaoi.web.id", "deleted": true, "count": 0 } }`
+			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' }],
+			responseExample: `{ "success": true, "data": { "address": "demo@yaoi.my.id", "deleted": true, "count": 0 } }`
 		},
 		{
 			id: 'mark_all_read',
@@ -326,8 +326,8 @@
 			method: 'POST',
 			path: '/api/v1/mailbox/{address}/mark-all-read',
 			description: 'Mark every unread message in the mailbox as read. Returns the number of messages updated.',
-			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' }],
-			responseExample: `{ "success": true, "data": { "address": "demo@yaoi.web.id", "updated": 3 } }`
+			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' }],
+			responseExample: `{ "success": true, "data": { "address": "demo@yaoi.my.id", "updated": 3 } }`
 		},
 
 		// ────────── Search ──────────
@@ -338,13 +338,13 @@
 			path: '/api/v1/mailbox/{address}/search',
 			description: 'Substring search across subject, from-address, from-name, and preview. Case-insensitive.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' },
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' },
 				{ name: 'q', in: 'query', type: 'string', required: true, example: 'github', description: 'Search keyword.' }
 			],
 			responseExample: `{
   "success": true,
   "data": {
-    "address": "demo@yaoi.web.id",
+    "address": "demo@yaoi.my.id",
     "query": "github",
     "count": 1,
     "messages": []
@@ -358,11 +358,11 @@
 			path: '/api/v1/mailbox/{address}/export',
 			description: 'Download all messages. format=jsonl (default) returns one JSON object per line. format=json returns pretty-printed array.',
 			params: [
-				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' },
+				{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' },
 				{ name: 'format', in: 'query', type: 'string', example: 'json', description: '`jsonl` (default) or `json`.', defaultValue: 'jsonl' }
 			],
 			responseExample: `// Content-Type: application/x-ndjson or application/json
-// Content-Disposition: attachment; filename="demo_at_yaoi.web.id-2026-09-14.jsonl"`
+// Content-Disposition: attachment; filename="demo_at_yaoi.my.id-2026-09-14.jsonl"`
 		},
 		{
 			id: 'events',
@@ -370,12 +370,12 @@
 			method: 'GET',
 			path: '/api/v1/mailbox/{address}/events',
 			description: 'Server-Sent Events stream. Polls KV every 3s and emits `messages` when new mail arrives. Also emits `ping` heartbeats and `mailbox_status` lifecycle events.',
-			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Full email address.' }],
+			params: [{ name: 'address', in: 'path', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Full email address.' }],
 			responseExample: `event: connected
-data: {"address":"demo@yaoi.web.id","timestamp":"2026-09-14T10:00:00.000Z"}
+data: {"address":"demo@yaoi.my.id","timestamp":"2026-09-14T10:00:00.000Z"}
 
 event: mailbox_status
-data: {"mailbox":{"id":"...","address":"demo@yaoi.web.id",...}}
+data: {"mailbox":{"id":"...","address":"demo@yaoi.my.id",...}}
 
 event: messages
 data: {"messages":[]}
@@ -393,7 +393,7 @@ data: {"time":1737000000000}`
 			description: 'Inbound email webhook receiver. Authenticates via WEBHOOK_SECRET env (sent as `Authorization: Bearer <secret>` or `x-webhook-secret: <secret>`). Auto-creates the mailbox on first delivery.',
 			auth: 'WEBHOOK_SECRET',
 			params: [
-				{ name: 'to', in: 'body', type: 'string', required: true, example: 'demo@yaoi.web.id', description: 'Recipient address.' },
+				{ name: 'to', in: 'body', type: 'string', required: true, example: 'demo@yaoi.my.id', description: 'Recipient address.' },
 				{ name: 'from', in: 'body', type: 'string', required: true, example: 'noreply@github.com', description: 'Sender address.' },
 				{ name: 'fromName', in: 'body', type: 'string', example: 'GitHub Security', description: 'Optional display name.' },
 				{ name: 'subject', in: 'body', type: 'string', example: 'Your code', description: 'Email subject.' },
@@ -401,7 +401,7 @@ data: {"time":1737000000000}`
 				{ name: 'html', in: 'body', type: 'string', example: '<p>Your code is <b>123456</b></p>', description: 'HTML body (will be sanitized on render).' }
 			],
 			bodyExample: `{
-  "to": "demo@yaoi.web.id",
+  "to": "demo@yaoi.my.id",
   "from": "noreply@github.com",
   "fromName": "GitHub Security",
   "subject": "Your verification code",
@@ -412,7 +412,7 @@ data: {"time":1737000000000}`
   "success": true,
   "data": {
     "id": "msg_inbound_xyz",
-    "to": "demo@yaoi.web.id",
+    "to": "demo@yaoi.my.id",
     "subject": "Your verification code",
     "receivedAt": "2026-09-14T10:01:00.000Z"
   }
@@ -460,13 +460,13 @@ data: {"time":1737000000000}`
 					<Terminal class="h-3.5 w-3.5" />
 					<span>Quick Example: create inbox via curl</span>
 				</div>
-				<button onclick={() => copyCode('curl', `curl -X POST ${activeBaseUrl}/api/v1/mailbox \\\n  -H "Content-Type: application/json" \\\n  -d '{"username":"demo","domain":"yaoi.web.id"}'`)} class="hover:text-white transition-colors inline-flex items-center gap-1">
+				<button onclick={() => copyCode('curl', `curl -X POST ${activeBaseUrl}/api/v1/mailbox \\\n  -H "Content-Type: application/json" \\\n  -d '{"username":"demo","domain":"yaoi.my.id"}'`)} class="hover:text-white transition-colors inline-flex items-center gap-1">
 					{#if copiedSnippet === 'curl'}<Check class="h-3 w-3 text-emerald-400" />Copied!{:else}<Copy class="h-3 w-3" />Copy{/if}
 				</button>
 			</div>
 			<pre class="p-3 rounded bg-zinc-900 border border-zinc-800 text-emerald-400 overflow-x-auto whitespace-pre">curl -X POST {activeBaseUrl}/api/v1/mailbox \
   -H "Content-Type: application/json" \
-  -d '{`{"username":"demo","domain":"yaoi.web.id"}`}'</pre>
+  -d '{`{"username":"demo","domain":"yaoi.my.id"}`}'</pre>
 		</div>
 	</header>
 

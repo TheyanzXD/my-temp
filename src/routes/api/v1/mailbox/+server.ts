@@ -8,7 +8,7 @@ import { ok, err, getIp } from '$lib/server/api/respond';
  * Create a new disposable mailbox.
  *
  * Body (JSON, all fields optional):
- *   { "username": "alice", "domain": "yaoi.web.id" }
+ *   { "username": "alice", "domain": "yaoi.my.id" }
  *
  * If `username` is omitted a random username is generated.
  * If `domain` is omitted the first available domain is used.

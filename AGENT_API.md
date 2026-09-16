@@ -1,6 +1,6 @@
 # YanzXD Temp — API Documentation for AI Agents
 
-Base URL: **https://temp.yaoi.web.id**
+Base URL: **https://yaoi.my.id**
 Source repo: SvelteKit + Cloudflare Workers + Workers KV
 Provider: `webhook` (Cloudflare Email Routing / Webhook)
 
@@ -39,21 +39,21 @@ Temporary email service. Create a mailbox, receive email, read it, discard. All 
 
 ```bash
 # 1. Create a mailbox (random address, 60-minute TTL)
-curl -s -X POST https://temp.yaoi.web.id/api/v1/mailbox \
+curl -s -X POST https://yaoi.my.id/api/v1/mailbox \
   -H 'content-type: application/json' -d '{}'
-# -> {"success":true,"data":{"id":"mb_hook_5zbadzp","address":"silent.ghost4493@temp.yaoi.web.id",...}}
+# -> {"success":true,"data":{"id":"mb_hook_5zbadzp","address":"silent.ghost4493@yaoi.my.id",...}}
 
 # 2. Poll for messages
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493@temp.yaoi.web.id/messages"
+curl -s "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493@yaoi.my.id/messages"
 
 # 3. Read a message (also flips isRead to true)
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493@temp.yaoi.web.id/messages/msg_abc123"
+curl -s "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493@yaoi.my.id/messages/msg_abc123"
 
 # 4. Mailbox auto-expires after 60 minutes. Delete early if done.
-curl -s -X DELETE "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493@temp.yaoi.web.id"
+curl -s -X DELETE "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493@yaoi.my.id"
 ```
 
-Live domain: `temp.yaoi.web.id` (MX active, status `online`).
+Live domain: `yaoi.my.id` (MX active, status `online`).
 `temp.yaoi.my.id` is reserved but **not yet active** (zone still initializing) — do not use it.
 
 ---
@@ -62,7 +62,7 @@ Live domain: `temp.yaoi.web.id` (MX active, status `online`).
 
 | Item | Value |
 |---|---|
-| Base URL | `https://temp.yaoi.web.id` |
+| Base URL | `https://yaoi.my.id` |
 | API prefix | `/api/v1` (health is at `/api`) |
 | Request body | `application/json` for POST |
 | Success response | `{ "success": true, "data": <payload> }` |
@@ -73,7 +73,7 @@ Live domain: `temp.yaoi.web.id` (MX active, status `online`).
 | Address encoding | URL-encode the `@` as `%40` and any dot/plus in the local part. `+` in a path segment decodes to a space — always encode it. |
 | Storage | Cloudflare Workers KV (eventually consistent; a message may take a second or two to appear after delivery) |
 
-**Address in URL paths.** Every path below takes the full address (`user@temp.yaoi.web.id`). Safe form: `silent.ghost4493%40temp.yaoi.web.id`. Raw `@` also works in practice, but percent-encoding is portable across HTTP clients, proxies, and shell history expansion.
+**Address in URL paths.** Every path below takes the full address (`user@yaoi.my.id`). Safe form: `silent.ghost4493%40yaoi.my.id`. Raw `@` also works in practice, but percent-encoding is portable across HTTP clients, proxies, and shell history expansion.
 
 ---
 
@@ -135,7 +135,7 @@ Liveness probe. Not versioned, not wrapped in `success`.
 ```
 
 ```bash
-curl -s https://temp.yaoi.web.id/api/health
+curl -s https://yaoi.my.id/api/health
 ```
 
 Use before any multi-step workflow to confirm the service is up and to learn which Cloudflare colo you are hitting. `ok: true` is the readiness signal.
@@ -154,7 +154,7 @@ Lists domains the service can receive mail on.
   "data": {
     "domains": [
       {
-        "domain": "temp.yaoi.web.id",
+        "domain": "yaoi.my.id",
         "status": "online",
         "availability": true,
         "mxStatus": "active",
@@ -167,7 +167,7 @@ Lists domains the service can receive mail on.
 ```
 
 ```bash
-curl -s https://temp.yaoi.web.id/api/v1/domains
+curl -s https://yaoi.my.id/api/v1/domains
 ```
 
 Only use a domain when `availability === true && status === "online"`. An offline domain will accept mailbox creation but never receive mail.
@@ -193,13 +193,13 @@ Lists the active mail provider and alternatives this deployment could switch to.
       { "id": "improvmx",  "name": "ImprovMX Webhook",                   "needs": "ImprovMX account" },
       { "id": "forwardemail", "name": "ForwardEmail Webhook",            "needs": "ForwardEmail account" }
     ],
-    "customDomains": ["temp.yaoi.web.id"]
+    "customDomains": ["yaoi.my.id"]
   }
 }
 ```
 
 ```bash
-curl -s https://temp.yaoi.web.id/api/v1/providers
+curl -s https://yaoi.my.id/api/v1/providers
 ```
 
 For agents: this endpoint is informational. `active.id` tells you the delivery path — with `webhook`, inbound mail arrives via `POST /api/v1/webhook/inbound`, and you cannot send mail into a mailbox from this API without the secret.
@@ -221,7 +221,7 @@ Service configuration and counts.
     "config": {
       "maxRequestsPerMinute": 120,
       "mailboxLifetimeMinutes": 60,
-      "customDomains": ["temp.yaoi.web.id"]
+      "customDomains": ["yaoi.my.id"]
     },
     "uptime": { "timestamp": "2026-09-16T01:18:24.939Z" }
   }
@@ -229,7 +229,7 @@ Service configuration and counts.
 ```
 
 ```bash
-curl -s https://temp.yaoi.web.id/api/v1/stats
+curl -s https://yaoi.my.id/api/v1/stats
 ```
 
 Read `config.mailboxLifetimeMinutes` at the start of a session to size your polling window — do not hardcode 60, it is deployment-configurable.
@@ -255,8 +255,8 @@ Creates a mailbox. Returns the address you will poll.
   "success": true,
   "data": {
     "id": "mb_hook_5zbadzp",
-    "address": "silent.ghost4493@temp.yaoi.web.id",
-    "domain": "temp.yaoi.web.id",
+    "address": "silent.ghost4493@yaoi.my.id",
+    "domain": "yaoi.my.id",
     "createdAt": "2026-09-16T01:18:26.736Z",
     "expiresAt": "2026-09-16T02:18:26.736Z"
   }
@@ -267,13 +267,13 @@ Creates a mailbox. Returns the address you will poll.
 
 ```bash
 # Random address
-curl -s -X POST https://temp.yaoi.web.id/api/v1/mailbox \
+curl -s -X POST https://yaoi.my.id/api/v1/mailbox \
   -H 'content-type: application/json' -d '{}'
 
 # Chosen username, extended lifetime
-curl -s -X POST https://temp.yaoi.web.id/api/v1/mailbox \
+curl -s -X POST https://yaoi.my.id/api/v1/mailbox \
   -H 'content-type: application/json' \
-  -d '{"username":"agent-7","domain":"temp.yaoi.web.id","lifetimeMinutes":120}'
+  -d '{"username":"agent-7","domain":"yaoi.my.id","lifetimeMinutes":120}'
 ```
 
 Rate limited at **30 creations per hour per IP**. Prefer deterministic usernames across retries over hammering creation — an address is reusable for its whole lifetime.
@@ -291,8 +291,8 @@ Fetch mailbox metadata.
   "success": true,
   "data": {
     "id": "mb_hook_5zbadzp",
-    "address": "silent.ghost4493@temp.yaoi.web.id",
-    "domain": "temp.yaoi.web.id",
+    "address": "silent.ghost4493@yaoi.my.id",
+    "domain": "yaoi.my.id",
     "createdAt": "2026-09-16T01:18:26.736Z",
     "expiresAt": "2026-09-16T02:18:26.736Z",
     "messageCount": 0
@@ -303,7 +303,7 @@ Fetch mailbox metadata.
 **404** — `MAILBOX_NOT_FOUND`, "Mailbox not found or expired". Same response for never-existed and TTL-expired.
 
 ```bash
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id"
+curl -s "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id"
 ```
 
 Use this to check `expiresAt` and compute how much polling time you have left.
@@ -317,11 +317,11 @@ Deletes the mailbox and all its messages immediately. Irreversible.
 **Response 200**
 
 ```json
-{ "success": true, "data": { "deleted": true, "address": "silent.ghost4493@temp.yaoi.web.id" } }
+{ "success": true, "data": { "deleted": true, "address": "silent.ghost4493@yaoi.my.id" } }
 ```
 
 ```bash
-curl -s -X DELETE "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id"
+curl -s -X DELETE "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id"
 ```
 
 Calling delete on an expired or unknown mailbox still returns `deleted: true` — it is idempotent, safe to retry.
@@ -345,7 +345,7 @@ Lists messages, newest first.
 {
   "success": true,
   "data": {
-    "address": "silent.ghost4493@temp.yaoi.web.id",
+    "address": "silent.ghost4493@yaoi.my.id",
     "total": 0,
     "count": 0,
     "offset": 0,
@@ -359,7 +359,7 @@ Lists messages, newest first.
 `total` is the mailbox's lifetime message count; `count` is what this page returned. With `limit: 200` and `total <= 200` you get everything in one call — the common case.
 
 ```bash
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/messages?offset=0&limit=50"
+curl -s "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/messages?offset=0&limit=50"
 ```
 
 Mailboxes hold a **maximum of 200 messages**; beyond that the oldest are evicted. A `total` pinned at 200 with `hasMore: false` means eviction has started.
@@ -373,7 +373,7 @@ Fetches one message. **Side effect:** sets `isRead: true` on first fetch.
 **Response 200** — see [EmailMessageDetail](#emailmessagedetail).
 
 ```bash
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/messages/msg_abc123"
+curl -s "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/messages/msg_abc123"
 ```
 
 This is the only endpoint that returns full `body`/`html`. List endpoints return previews only, so this call is mandatory before extracting verification codes or links.
@@ -391,7 +391,7 @@ Deletes one message. Irreversible.
 ```
 
 ```bash
-curl -s -X DELETE "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/messages/msg_abc123"
+curl -s -X DELETE "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/messages/msg_abc123"
 ```
 
 ---
@@ -412,7 +412,7 @@ Server-side substring search over a mailbox's messages.
 {
   "success": true,
   "data": {
-    "address": "silent.ghost4493@temp.yaoi.web.id",
+    "address": "silent.ghost4493@yaoi.my.id",
     "query": "verification",
     "count": 0,
     "messages": []
@@ -421,7 +421,7 @@ Server-side substring search over a mailbox's messages.
 ```
 
 ```bash
-curl -s -G "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/search" \
+curl -s -G "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/search" \
   --data-urlencode 'q=verification'
 ```
 
@@ -438,12 +438,12 @@ Sets `isRead: true` on every message in the mailbox.
 ```json
 {
   "success": true,
-  "data": { "address": "silent.ghost4493@temp.yaoi.web.id", "updated": 0 }
+  "data": { "address": "silent.ghost4493@yaoi.my.id", "updated": 0 }
 }
 ```
 
 ```bash
-curl -s -X POST "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/mark-all-read"
+curl -s -X POST "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/mark-all-read"
 ```
 
 `updated` is the number of messages flipped. Useful for a "clear the unread badge" step, or to reset state before a fresh test run.
@@ -457,7 +457,7 @@ Downloads the entire mailbox as newline-delimited JSON.
 **Response 200** — `Content-Type: application/x-ndjson`, `Content-Disposition: attachment; filename="<address>-<date>.jsonl"`. Each line is one full message JSON. An empty mailbox returns a single newline.
 
 ```bash
-curl -s -o mailbox.jsonl "https://temp.yaoi.web.id/api/v1/mailbox/silent.ghost4493%40temp.yaoi.web.id/export"
+curl -s -o mailbox.jsonl "https://yaoi.my.id/api/v1/mailbox/silent.ghost4493%40yaoi.my.id/export"
 cat mailbox.jsonl | jq -s 'length'
 ```
 
@@ -472,7 +472,7 @@ Server-Sent Events stream. Long-lived connection; the server pushes a `mailbox_s
 **Response** — `Content-Type: text/event-stream`
 
 ```bash
-curl -sN "https://temp.yaoi.web.id/api/v1/mailbox/ok_user%40temp.yaoi.web.id/events"
+curl -sN "https://yaoi.my.id/api/v1/mailbox/ok_user%40yaoi.my.id/events"
 ```
 
 **Event types**
@@ -489,7 +489,7 @@ If the address does not exist, the first event is `error` with `"expired": true`
 
 ```bash
 # Stream until a message arrives, then quit
-curl -sN "https://temp.yaoi.web.id/api/v1/mailbox/ok_user%40temp.yaoi.web.id/events" | grep --line-buffered -m1 -A1 '^event: messages'
+curl -sN "https://yaoi.my.id/api/v1/mailbox/ok_user%40yaoi.my.id/events" | grep --line-buffered -m1 -A1 '^event: messages'
 ```
 
 Agents must honor `text/event-stream` framing: split on blank lines, read `event:` and `data:` lines. Do not JSON-parse the raw body. Reconnect with a fresh request if the socket drops — there is no `Last-Event-ID` resume; you get a full snapshot on reconnect.
@@ -527,10 +527,10 @@ x-webhook-secret: <WEBHOOK_SECRET>
 **401** — `UNAUTHORIZED`, "Unauthorized webhook request" — secret missing or wrong.
 
 ```bash
-curl -s -X POST https://temp.yaoi.web.id/api/v1/webhook/inbound \
+curl -s -X POST https://yaoi.my.id/api/v1/webhook/inbound \
   -H 'authorization: Bearer ***' \
   -H 'content-type: application/json' \
-  -d '{"to":"ok_user@temp.yaoi.web.id","from":"sender@example.com","fromName":"Test","subject":"Hello agent","text":"body text","html":"<b>hi</b>"}'
+  -d '{"to":"ok_user@yaoi.my.id","from":"sender@example.com","fromName":"Test","subject":"Hello agent","text":"body text","html":"<b>hi</b>"}'
 ```
 
 You cannot read the secret from this API. If your workflow needs to inject mail, obtain `WEBHOOK_SECRET` from the deployment owner out of band.
@@ -548,7 +548,7 @@ Returned by list and search endpoints.
   "id": "msg_abc123",
   "from": "sender@example.com",
   "fromName": "Test",
-  "to": "ok_user@temp.yaoi.web.id",
+  "to": "ok_user@yaoi.my.id",
   "subject": "Hello agent",
   "preview": "First ~100 characters of the text body…",
   "isRead": false,
@@ -566,7 +566,7 @@ Returned by `GET .../messages/[id]` and by the webhook. Fetching this marks the 
   "id": "msg_abc123",
   "from": "sender@example.com",
   "fromName": "Test",
-  "to": "ok_user@temp.yaoi.web.id",
+  "to": "ok_user@yaoi.my.id",
   "subject": "Hello agent",
   "body": "Full plain-text body",
   "html": "<b>hi</b>",
@@ -581,8 +581,8 @@ Returned by `GET .../messages/[id]` and by the webhook. Fetching this marks the 
 ```json
 {
   "id": "mb_hook_5zbadzp",
-  "address": "silent.ghost4493@temp.yaoi.web.id",
-  "domain": "temp.yaoi.web.id",
+  "address": "silent.ghost4493@yaoi.my.id",
+  "domain": "yaoi.my.id",
   "createdAt": "2026-09-16T01:18:26.736Z",
   "expiresAt": "2026-09-16T02:18:26.736Z",
   "messageCount": 0
@@ -667,12 +667,12 @@ Mailbox addresses appear in the URL path and contain characters that need encodi
 
 ```bash
 # shell-safe, handles @ and + correctly
-ADDR='silent.ghost4493@temp.yaoi.web.id'
+ADDR='silent.ghost4493@yaoi.my.id'
 ENC=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$ADDR")
-curl -s "https://temp.yaoi.web.id/api/v1/mailbox/$ENC/messages"
+curl -s "https://yaoi.my.id/api/v1/mailbox/$ENC/messages"
 
 # or let curl encode the query string for /search
-curl -s -G "https://temp.yaoi.web.id/api/v1/mailbox/$ENC/search" --data-urlencode 'q=verification code'
+curl -s -G "https://yaoi.my.id/api/v1/mailbox/$ENC/search" --data-urlencode 'q=verification code'
 ```
 
 In JavaScript: `encodeURIComponent(address)`. In Python: `urllib.parse.quote(address, safe='')`. Never use `encodeURI` — it leaves `@` and `+` untouched.
@@ -720,7 +720,7 @@ Comfortably inside the global limit. Bursting all 20 polls in 5 seconds would st
 
 ## Reference
 
-- Live service: https://temp.yaoi.web.id
-- Interactive API docs (human): https://temp.yaoi.web.id/api-docs
+- Live service: https://yaoi.my.id
+- Interactive API docs (human): https://yaoi.my.id/api-docs
 - Provider: Cloudflare Workers + Workers KV, `webhook` provider via Cloudflare Email Routing
 - Health colo: `SIN` — requests are served from the Cloudflare datacenter nearest the client

@@ -19,7 +19,7 @@ import {
 /**
  * WebhookMailProvider — store mailboxes + messages in Cloudflare KV so they
  * survive across requests/isolates. Use with MAIL_PROVIDER=webhook and
- * CUSTOM_DOMAINS=yaoi.web.id (or any domain you own that is wired into
+ * CUSTOM_DOMAINS=yaoi.my.id (or any domain you own that is wired into
  * Cloudflare Email Routing, ImprovMX, or ForwardEmail).
  */
 export class WebhookMailProvider implements MailProvider {
@@ -28,7 +28,7 @@ export class WebhookMailProvider implements MailProvider {
 
 	constructor(
 		name = 'Webhook Provider (Cloudflare / ForwardEmail / ImprovMX)',
-		domains: string[] = ['yaoi.web.id']
+		domains: string[] = ['yaoi.my.id']
 	) {
 		this.name = name;
 		this.customDomains = domains;
@@ -39,6 +39,12 @@ export class WebhookMailProvider implements MailProvider {
 
 	bind(platform: App.Platform | undefined) {
 		this.platform = platform;
+	}
+
+	setDomains(domains: string[]) {
+		if (domains && domains.length > 0) {
+			this.customDomains = domains;
+		}
 	}
 
 	async getDomains(): Promise<DomainInfo[]> {
@@ -52,7 +58,7 @@ export class WebhookMailProvider implements MailProvider {
 	}
 
 	async createMailbox(customUsername?: string, chosenDomain?: string): Promise<Mailbox> {
-		const domain = chosenDomain || this.customDomains[0] || 'yaoi.web.id';
+		const domain = chosenDomain || this.customDomains[0] || 'yaoi.my.id';
 		let username = customUsername
 			? customUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '')
 			: '';
@@ -133,12 +139,20 @@ export async function receiveInboundWebhookEmail(
 		html?: string;
 	}
 ): Promise<EmailMessageDetail> {
-	const address = data.to.toLowerCase().trim();
+	// Normalize email address: extract plain email if format is "Name <email@domain>"
+	let rawTo = data.to.trim();
+	const emailMatch = rawTo.match(/<([^>]+)>/) || rawTo.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+	const address = (emailMatch ? emailMatch[1] : rawTo).toLowerCase().trim();
+
+	let rawFrom = data.from.trim();
+	const fromMatch = rawFrom.match(/<([^>]+)>/) || rawFrom.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+	const fromAddress = (fromMatch ? fromMatch[1] : rawFrom).toLowerCase().trim();
+	const fromName = data.fromName || rawFrom.replace(/<[^>]+>/, '').trim() || fromAddress;
 
 	// Auto-create mailbox if missing
 	let mb = await getMailboxKV(platform, address);
 	if (!mb) {
-		const domain = address.split('@')[1] || 'yaoi.web.id';
+		const domain = address.split('@')[1] || 'yaoi.my.id';
 		mb = {
 			id: 'mb_inbound_' + Math.random().toString(36).substring(2, 9),
 			address,
@@ -158,8 +172,8 @@ export async function receiveInboundWebhookEmail(
 		mailboxId: mb.id,
 		mailboxAddress: address,
 		from: {
-			name: data.fromName || data.from,
-			address: data.from
+			name: fromName,
+			address: fromAddress
 		},
 		to: [{ address }],
 		subject: data.subject || '(No Subject)',
