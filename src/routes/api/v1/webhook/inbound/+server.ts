@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { receiveInboundWebhookEmail } from '$lib/server/mail/webhook-provider';
+import { parseMailText } from '$lib/server/mail/mime';
 import { ok, err } from '$lib/server/api/respond';
 
 /**
@@ -57,8 +58,15 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		const fromName = (body.from_name ?? body.fromName ?? rawFrom.replace(/<[^>]+>/, '').trim() ?? from).toString();
 
 		const subject = (body.subject ?? body.title ?? '(No Subject)').toString();
-		const text = (body.text ?? body.body ?? body.text_body ?? body.plain ?? '').toString();
+		let text = (body.text ?? body.body ?? body.text_body ?? body.plain ?? '').toString();
 		const html = (body.html ?? body.body_html ?? body.html_body ?? body.raw_html ?? '').toString();
+
+		// The email worker forwards raw RFC822 (headers + MIME structure) as
+		// `text` when the provider doesn't expose pre-parsed bodies. Detect that
+		// and reduce it to clean readable text.
+		if (text && /^(Received|From|To|Subject|MIME-Version|Content-Type):/im.test(text)) {
+			text = parseMailText(text);
+		}
 
 		if (!to || !to.includes('@')) {
 			return err('INVALID_RECIPIENT', 'Invalid or missing "to" email address', 400);

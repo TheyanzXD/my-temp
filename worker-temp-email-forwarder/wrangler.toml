@@ -1,0 +1,8 @@
+name = "temp-email-forwarder"
+main = "src/index.ts"
+compatibility_date = "2026-09-15"
+
+[vars]
+WEBHOOK_URL = "https://temp.yaoi.web.id/api/v1/webhook/inbound,https://yaoi.web.id/api/v1/webhook/inbound"
+
+# WEBHOOK_SECRET set via: wrangler secret put WEBHOOK_SECRET
