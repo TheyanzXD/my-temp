@@ -44,9 +44,9 @@ Configured in `wrangler.toml` under `[vars]`:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MAIL_PROVIDER` | Provider type: `webhook`, `mock`, `mailslurp`, `mailgw`, `improvmx`, `forwardemail` | `webhook` |
-| `CUSTOM_DOMAINS` | Comma-separated domains for webhook provider | `yaoi.my.id` |
+| `CUSTOM_DOMAINS` | Comma-separated domains for webhook provider | `yaoi.web.id` |
 | `APP_NAME` | Display name | `MyTemp` |
-| `APP_URL` | Public URL | `https://yaoi.my.id` |
+| `APP_URL` | Public URL | `https://yaoi.web.id` |
 | `MAILBOX_LIFETIME_MINUTES` | Mailbox TTL | `60` |
 | `MAX_REQUESTS_PER_MINUTE` | Rate limit | `120` |
 | `CORS_ALLOWED_ORIGINS` | CORS origins | `*` |
@@ -82,7 +82,7 @@ Then update `wrangler.toml` with the returned IDs.
 ## Custom Domain
 
 1. In Cloudflare Dashboard → Pages → yanzxd → Custom domains
-2. Add `yaoi.my.id` (or your domain)
+2. Add `yaoi.web.id` (or your domain)
 3. Ensure DNS points to Cloudflare Pages
 
 ## Mail Provider Setup

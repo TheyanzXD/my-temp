@@ -19,7 +19,7 @@ import {
 /**
  * WebhookMailProvider — store mailboxes + messages in Cloudflare KV so they
  * survive across requests/isolates. Use with MAIL_PROVIDER=webhook and
- * CUSTOM_DOMAINS=yaoi.my.id (or any domain you own that is wired into
+ * CUSTOM_DOMAINS=yaoi.web.id (or any domain you own that is wired into
  * Cloudflare Email Routing, ImprovMX, or ForwardEmail).
  */
 export class WebhookMailProvider implements MailProvider {
@@ -28,7 +28,7 @@ export class WebhookMailProvider implements MailProvider {
 
 	constructor(
 		name = 'Webhook Provider (Cloudflare / ForwardEmail / ImprovMX)',
-		domains: string[] = ['yaoi.my.id']
+		domains: string[] = ['yaoi.web.id']
 	) {
 		this.name = name;
 		this.customDomains = domains;
@@ -58,7 +58,7 @@ export class WebhookMailProvider implements MailProvider {
 	}
 
 	async createMailbox(customUsername?: string, chosenDomain?: string): Promise<Mailbox> {
-		const domain = chosenDomain || this.customDomains[0] || 'yaoi.my.id';
+		const domain = chosenDomain || this.customDomains[0] || 'yaoi.web.id';
 		let username = customUsername
 			? customUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '')
 			: '';
@@ -152,7 +152,7 @@ export async function receiveInboundWebhookEmail(
 	// Auto-create mailbox if missing
 	let mb = await getMailboxKV(platform, address);
 	if (!mb) {
-		const domain = address.split('@')[1] || 'yaoi.my.id';
+		const domain = address.split('@')[1] || 'yaoi.web.id';
 		mb = {
 			id: 'mb_inbound_' + Math.random().toString(36).substring(2, 9),
 			address,

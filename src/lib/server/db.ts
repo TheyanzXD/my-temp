@@ -89,9 +89,15 @@ const MAILBOX_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 export async function putMailbox(platform: App.Platform | undefined, mb: Mailbox): Promise<void> {
 	const kv = getMailKV(platform);
-	await kv.put(MAILBOX_KEY(mb.address), JSON.stringify(mb), {
-		expirationTtl: MAILBOX_TTL_SECONDS
-	});
+	// Fail-safe: a KV write error (quota exhausted, transient) must not 500
+	// mailbox creation. The mailbox is returned to the caller either way.
+	try {
+		await kv.put(MAILBOX_KEY(mb.address), JSON.stringify(mb), {
+			expirationTtl: MAILBOX_TTL_SECONDS
+		});
+	} catch {
+		// no-op — caller gets the mailbox object; persistence retried on next write
+	}
 }
 
 export async function getMailboxKV(
@@ -125,7 +131,11 @@ export async function appendMessageKV(
 	list.unshift(msg);
 	// Cap stored messages per mailbox to avoid unbounded growth
 	const trimmed = list.slice(0, 200);
-	await kv.put(key, JSON.stringify(trimmed), { expirationTtl: MESSAGES_TTL_SECONDS });
+	try {
+		await kv.put(key, JSON.stringify(trimmed), { expirationTtl: MESSAGES_TTL_SECONDS });
+	} catch {
+		// quota exhausted or transient — message still returned to caller
+	}
 }
 
 export async function getMessagesKV(
@@ -149,7 +159,11 @@ export async function deleteMessageKV(
 	const idx = list.findIndex((m) => m.id === messageId);
 	if (idx === -1) return false;
 	list.splice(idx, 1);
-	await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
+	try {
+		await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
+	} catch {
+		// quota exhausted — report deletion by id even if persistence lagged
+	}
 	return true;
 }
 
@@ -165,7 +179,11 @@ export async function updateMessageReadKV(
 	const msg = list.find((m) => m.id === messageId);
 	if (!msg) return null;
 	msg.isRead = true;
-	await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
+	try {
+		await kv.put(MESSAGES_KEY(address), JSON.stringify(list), { expirationTtl: MESSAGES_TTL_SECONDS });
+	} catch {
+		// quota exhausted — still return the message to the caller
+	}
 	return msg;
 }
 
@@ -210,7 +228,13 @@ export async function rateLimitHit(
 	const allowed = entry.count <= maxRequests;
 	const remaining = Math.max(0, maxRequests - entry.count);
 
-	await kv.put(key, JSON.stringify(entry), { expirationTtl: windowSec });
+	// Fail-open: a KV write error (quota exhausted, transient) must never take
+	// down the request. Rate limiting is a soft guard here.
+	try {
+		await kv.put(key, JSON.stringify(entry), { expirationTtl: windowSec });
+	} catch {
+		return { allowed: true, remaining: maxRequests, resetTime: now + windowSec };
+	}
 
 	return { allowed, remaining, resetTime: entry.resetTime };
 }

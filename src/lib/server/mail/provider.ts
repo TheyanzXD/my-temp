@@ -9,7 +9,7 @@ let cachedProviderType: string | null = null;
 
 export function getMailProvider(platform?: App.Platform): MailProvider {
 	const providerType = (platform?.env?.MAIL_PROVIDER || 'webhook').toLowerCase();
-	const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.my.id')
+	const customDomains = (platform?.env?.CUSTOM_DOMAINS || 'yaoi.web.id')
 		.split(',')
 		.map((d) => d.trim())
 		.filter(Boolean);
