@@ -436,8 +436,8 @@ data: {"time":1737000000000}`
 </script>
 
 <svelte:head>
-	<title>API Reference — MyTemp</title>
-	<meta name="description" content="Interactive REST API documentation for MyTemp disposable email service on Cloudflare Pages." />
+	<title>API Reference — YanzXD Temp</title>
+	<meta name="description" content="Interactive REST API documentation for YanzXD Temp disposable email service on Cloudflare Pages." />
 </svelte:head>
 
 <div class="max-w-5xl mx-auto space-y-8 py-4">
