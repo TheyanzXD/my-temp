@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { EmailMessageDetail } from '$lib/server/mail/types';
 	import { formatExactDate } from '$lib/utils';
-	import { ArrowLeft, Copy, Check, Trash2, ExternalLink, ShieldCheck, Mail, Clock, Download } from 'lucide-svelte';
+	import { ArrowLeft, Copy, Check, Trash2, ExternalLink, ShieldCheck, Download, KeyRound, Link as LinkIcon } from 'lucide-svelte';
 	import { toasts } from '$lib/stores/toast';
 
 	let {
@@ -14,26 +14,27 @@
 		onDelete: (id: string) => void;
 	} = $props();
 
-	let copied = $state(false);
+	let copiedKey = $state<string | null>(null);
+	// Prefer real HTML, then rendered markdown, last plain text.
 	let viewMode: 'html' | 'text' = $state('html');
 
-	const hasValidHtml = $derived(
-		message.sanitizedHtml && message.sanitizedHtml.trim().length > 0 && message.sanitizedHtml !== '<pre></pre>'
-	);
+	const renderedHtml = $derived(message.sanitizedHtml || message.markdownHtml || '');
+	const hasValidHtml = $derived(renderedHtml.trim().length > 0 && renderedHtml !== '<pre></pre>');
+	const actionables = $derived(message.actionables ?? []);
 
-	async function copyBody() {
+	async function copyValue(value: string, key: string) {
 		try {
-			await navigator.clipboard.writeText(message.textBody || message.htmlBody);
-			copied = true;
-			toasts.add({ title: 'Copied email content!', type: 'success', duration: 2000 });
-			setTimeout(() => (copied = false), 2000);
+			await navigator.clipboard.writeText(value);
+			copiedKey = key;
+			toasts.add({ title: 'Copied to clipboard', type: 'success', duration: 2000 });
+			setTimeout(() => (copiedKey = null), 2000);
 		} catch {
 			toasts.add({ title: 'Failed to copy', type: 'error' });
 		}
 	}
 
 	function openOriginal() {
-		const content = message.htmlBody || message.textBody;
+		const content = message.htmlBody || message.markdownHtml || message.textBody;
 		const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		window.open(url, '_blank');
@@ -58,22 +59,22 @@
 					onclick={() => (viewMode = 'html')}
 					class="px-3 py-1.5 rounded-lg font-medium transition-all {viewMode === 'html' ? 'bg-white dark:bg-zinc-800 font-bold text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400'}"
 				>
-					HTML View
+					Rendered
 				</button>
 				<button
 					onclick={() => (viewMode = 'text')}
 					class="px-3 py-1.5 rounded-lg font-medium transition-all {viewMode === 'text' ? 'bg-white dark:bg-zinc-800 font-bold text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400'}"
 				>
-					Plain Text
+					Source
 				</button>
 			</div>
 
 			<button
-				onclick={copyBody}
+				onclick={() => copyValue(message.textBody || message.htmlBody, 'body')}
 				class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
 				title="Copy email text"
 			>
-				{#if copied}
+				{#if copiedKey === 'body'}
 					<Check class="h-3.5 w-3.5 text-emerald-500" />
 					<span class="font-semibold text-emerald-600">Copied</span>
 				{:else}
@@ -147,18 +148,52 @@
 				{/each}
 			</div>
 		{/if}
+
+		<!-- Quick actions: OTP codes + verification URLs -->
+		{#if actionables.length > 0}
+			<div class="flex items-center gap-2 flex-wrap pt-1">
+				<span class="text-[11px] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mr-0.5">
+					Detected
+				</span>
+				{#each actionables as item, i}
+					<button
+						onclick={() => copyValue(item.value, `act${i}`)}
+						title="Copy {item.kind === 'otp' ? 'code' : 'link'}"
+						class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shadow-2xs
+							{item.kind === 'otp'
+							? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+							: 'border-sky-200 dark:border-sky-900/60 bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60'}"
+					>
+						{#if item.kind === 'otp'}
+							<KeyRound class="h-3.5 w-3.5" />
+						{:else}
+							<LinkIcon class="h-3.5 w-3.5" />
+						{/if}
+						<span class="font-mono">{item.label}</span>
+						{#if copiedKey === `act${i}`}
+							<Check class="h-3.5 w-3.5 text-emerald-500" />
+						{/if}
+					</button>
+				{/each}
+			</div>
+		{/if}
 	</div>
 
 	<!-- Render Body -->
 	<div class="flex-1 p-6 overflow-y-auto bg-zinc-50/40 dark:bg-zinc-950/40">
 		{#if viewMode === 'html' && hasValidHtml}
 			<div class="email-sandbox rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 p-6 min-h-[300px] shadow-2xs">
-				{@html message.sanitizedHtml}
+				{@html renderedHtml}
 			</div>
-		{:else}
+		{:else if viewMode === 'text'}
 			<pre class="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 text-xs font-mono text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed min-h-[300px] shadow-2xs">
-				{message.textBody || 'No text content available in this email.'}
+				{message.textBody || message.htmlBody || 'No content available in this email.'}
 			</pre>
+		{:else}
+			<!-- No HTML and no markdown to render: show plain text, still readable. -->
+			<div class="email-sandbox whitespace-pre-wrap rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 p-6 min-h-[300px] shadow-2xs">
+				{message.textBody || 'No text content available in this email.'}
+			</div>
 		{/if}
 	</div>
 </div>
@@ -168,6 +203,7 @@
 		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 		color: #18181b;
 		word-break: break-word;
+		line-height: 1.6;
 	}
 	:global(.dark .email-sandbox) {
 		color: #f4f4f5;
@@ -183,5 +219,38 @@
 		max-width: 100%;
 		height: auto;
 		border-radius: 6px;
+	}
+	:global(.email-sandbox code) {
+		background: rgba(113, 113, 122, 0.14);
+		padding: 0.1em 0.35em;
+		border-radius: 4px;
+		font-size: 0.9em;
+	}
+	:global(.email-sandbox blockquote) {
+		border-left: 3px solid rgba(99, 102, 241, 0.4);
+		padding-left: 0.9em;
+		margin: 0.6em 0;
+		color: #52525b;
+	}
+	:global(.dark .email-sandbox blockquote) {
+		color: #a1a1aa;
+	}
+	:global(.email-sandbox ul) {
+		list-style: disc;
+		padding-left: 1.3em;
+		margin: 0.5em 0;
+	}
+	:global(.email-sandbox h1), :global(.email-sandbox h2), :global(.email-sandbox h3) {
+		font-weight: 700;
+		margin: 0.7em 0 0.35em;
+		line-height: 1.25;
+	}
+	:global(.email-sandbox h1) { font-size: 1.4em; }
+	:global(.email-sandbox h2) { font-size: 1.2em; }
+	:global(.email-sandbox h3) { font-size: 1.05em; }
+	:global(.email-sandbox hr) {
+		border: none;
+		border-top: 1px solid rgba(113, 113, 122, 0.3);
+		margin: 1em 0;
 	}
 </style>

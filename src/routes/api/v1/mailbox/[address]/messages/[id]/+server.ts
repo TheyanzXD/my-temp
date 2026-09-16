@@ -1,5 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { getMessage, deleteMessage } from '$lib/server/mail';
+import { extractActionables, markdownToHtml } from '$lib/server/mail/extract';
+import { sanitizeEmailHtml } from '$lib/server/security';
 import { checkRateLimit } from '$lib/server/security';
 import { ok, err, getIp, cacheHeaders } from '$lib/server/api/respond';
 
@@ -22,6 +24,18 @@ export const GET: RequestHandler = async (event) => {
 	try {
 		const message = await getMessage(event.platform, address, id);
 		if (!message) return err('MESSAGE_NOT_FOUND', 'Message not found', 404);
+
+		// Messages stored before the actionables/markdown feature ship without
+		// those fields. Backfill on read so every message gets copy buttons.
+		if (!message.actionables || !message.markdownHtml) {
+			message.actionables = message.actionables?.length
+				? message.actionables
+				: extractActionables(message.textBody, message.htmlBody).slice(0, 4);
+			if (!message.markdownHtml && !message.htmlBody) {
+				message.markdownHtml = sanitizeEmailHtml(markdownToHtml(message.textBody)) || undefined;
+			}
+		}
+
 		return ok(message, { headers: cacheHeaders.noStore });
 	} catch (e: unknown) {
 		return err('INTERNAL_ERROR', e instanceof Error ? e.message : 'Error fetching message detail', 500);

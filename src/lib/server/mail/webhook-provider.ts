@@ -6,6 +6,7 @@ import type {
 	MailProvider
 } from './types';
 import { sanitizeEmailHtml } from '../security';
+import { markdownToHtml, extractActionables } from './extract';
 import {
 	putMailbox,
 	getMailboxKV,
@@ -164,8 +165,13 @@ export async function receiveInboundWebhookEmail(
 		await putMailbox(platform, mb);
 	}
 
-	const rawHtml = data.html || (data.text ? `<pre>${data.text}</pre>` : '');
+	const rawHtml = data.html || '';
 	const textBody = data.text || data.html?.replace(/<[^>]*>/g, '') || '';
+
+	// Transactional mail is mostly plain text. Render markdown-ish formatting
+	// (bold, links, lists) to HTML so the body isn't a wall of raw text, then
+	// sanitize exactly like a real HTML part.
+	const mdHtml = rawHtml ? '' : sanitizeEmailHtml(markdownToHtml(textBody));
 
 	const newMsg: EmailMessageDetail = {
 		id: 'msg_inbound_' + Math.random().toString(36).substring(2, 10),
@@ -184,6 +190,8 @@ export async function receiveInboundWebhookEmail(
 		textBody,
 		htmlBody: rawHtml,
 		sanitizedHtml: sanitizeEmailHtml(rawHtml),
+		markdownHtml: mdHtml || undefined,
+		actionables: extractActionables(textBody, rawHtml).slice(0, 4),
 		attachments: []
 	};
 

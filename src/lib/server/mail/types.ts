@@ -50,6 +50,10 @@ export interface EmailMessageDetail extends EmailMessageSummary {
 	textBody: string;
 	htmlBody: string;
 	sanitizedHtml: string;
+	/** Rendered-safe HTML derived from markdown text, when no HTML part exists. */
+	markdownHtml?: string;
+	/** OTP codes + verification URLs lifted from the body, for copy buttons. */
+	actionables?: { kind: 'otp' | 'url'; value: string; label: string }[];
 	rawHeaders?: Record<string, string>;
 	attachments: EmailAttachment[];
 }
