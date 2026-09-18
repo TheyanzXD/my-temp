@@ -718,6 +718,54 @@ Comfortably inside the global limit. Bursting all 20 polls in 5 seconds would st
 
 ---
 
+## Provider Reference
+
+The build ships with **10 mail providers** behind one API surface. Switch via `MAIL_PROVIDER=<id>` env var (default `webhook`).
+
+| ID | Upstream / API | Auth | Domains | Lifetime |
+|---|---|---|---|---|
+| `webhook` | Cloudflare Email Routing / ImprovMX / ForwardEmail (`POST /api/v1/webhook/inbound`) | `WEBHOOK_SECRET` | configured via `CUSTOM_DOMAINS` | configurable up to 1440 min |
+| `mailtm` | `https://api.mail.tm` (alt: `api.mail.gw`) | none (auto-account) | uberip.com | mailbox TTL managed by upstream |
+| `tempmailio` | `https://api.internal.temp-mail.io/api/v3` | none (per-session token) | 7+ public domains: ozsaip, yzcalo, lnovic, ruutukf, gmeenramy, olipii, ooynib | ~10 minutes (upstream) |
+| `guerrilla` | `https://api.guerrillamail.com/ajax.php` | `sid_token` (auto) | guerrillamail.com, guerrillamailblock.com, sharklasers.com, grr.la | rotated per session |
+| `composite` | Composite chain — `mailtm` → `tempmailio` → `guerrilla`, transparent fallback on quota / 5xx | per-provider | union of upstream domains | inherits |
+| `five` | Five-Provider Auto-Rotator — rotates per-minute across all five usable providers | inherits | union | inherits |
+| `mock` | KV-backed deterministic seed — never makes a network call, never fails | none | tempinbox.org · quickmail.dev · disposafast.io · mailprivy.net · vaultbox.cc | configurable up to 1440 min |
+| `mailslurp` | `https://docs.mailslurp.com` | `MAIL_API_KEY` | upstream account domains | upstream |
+| `improvmx` / `forwardemail` | alternate webhook frontends → `webhook` provider under the hood | `WEBHOOK_SECRET` / provider secret | configured | configurable |
+
+### Switching providers
+
+```bash
+# mail.tm (free public, no setup)
+wrangler pages secret put MAIL_PROVIDER --project-name yanzxd   # value: mailtm
+
+# Five-provider auto-rotator (recommended for production: one bad upstream → rotates to the next)
+# Set MAIL_PROVIDER=five in wrangler.toml [vars]
+
+# temp-mail.io (7+ domains, no auth)
+# Set MAIL_PROVIDER=tempmailio
+
+# guerrilla (multi-domain rotation, no auth)
+# Set MAIL_PROVIDER=guerrilla
+
+# composite (mail.tm → tempmailio → guerrilla auto-fallback)
+# Set MAIL_PROVIDER=composite
+```
+
+### Choosing one
+
+- **For evaluation**: `webhook` (your own domain) — most reliable, full control.
+- **For zero-setup demo**: `mailtm` — fastest, single GET against `api.mail.tm`.
+- **For multi-domain variety**: `tempmailio` — exposes 7+ public domains automatically.
+- **For max uptime without work**: `five` or `composite` — when one upstream is down the next one is tried.
+
+### Provider outputs are NOT cross-compatible
+
+An address created by `mailtm` cannot be read by `tempmailio`. Each provider manages its own mailbox namespace. Stick to a single provider per deployment, or use `five`/`composite` for rotation. After a deploy that flips `MAIL_PROVIDER`, any in-flight addresses from the old provider become unreadable until the upstream's TTL expires.
+
+---
+
 ## Reference
 
 - Live service: https://yaoi.web.id

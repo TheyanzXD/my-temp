@@ -128,14 +128,22 @@
 			group: 'Core',
 			method: 'GET',
 			path: '/api/v1/providers',
-			description: 'List the active mail provider and every provider the build supports, with their prerequisites.',
+			description: 'List the active mail provider and every provider the build supports, with their prerequisites and upstream docs links.',
 			responseExample: `{
   "success": true,
   "data": {
     "active": { "id": "webhook", "name": "Cloudflare Email Routing / Webhook" },
     "available": [
-      { "id": "webhook", "name": "Cloudflare Email Routing / Webhook", "needs": "Cloudflare Email Routing or ImprovMX/ForwardEmail" },
-      { "id": "mock", "name": "KV-backed Demo", "needs": "none" }
+      { "id": "webhook",   "name": "Cloudflare Email Routing / Webhook (yaoi.web.id)", "needs": "Cloudflare Email Routing", "docs": "https://developers.cloudflare.com/email-routing/" },
+      { "id": "mailtm",    "name": "Mail.tm / Mail.gw (public REST + JWT)",            "needs": "none",                        "docs": "https://docs.mail.tm" },
+      { "id": "tempmailio","name": "Temp-Mail.io internal API v3",                    "needs": "none",                        "docs": "https://temp-mail.io/en/api" },
+      { "id": "guerrilla", "name": "GuerrillaMail public AJAX",                       "needs": "none",                        "docs": "https://www.guerrillamail.com/developer" },
+      { "id": "composite", "name": "Composite (mail.tm → temp-mail.io → guerrilla)",  "needs": "none",                        "docs": "" },
+      { "id": "five",      "name": "Five-Provider Auto-Rotator (rotates per minute)", "needs": "none",                        "docs": "" },
+      { "id": "mock",      "name": "KV-backed Demo",                                  "needs": "none",                        "docs": "" },
+      { "id": "mailslurp", "name": "MailSlurp Enterprise",                            "needs": "MAIL_API_KEY",                "docs": "https://docs.mailslurp.com" },
+      { "id": "improvmx",  "name": "ImprovMX Webhook",                                "needs": "ImprovMX account",            "docs": "https://improvmx.com/api" },
+      { "id": "forwardemail","name":"ForwardEmail Webhook",                            "needs": "ForwardEmail account",        "docs": "https://forwardemail.net/guides" }
     ],
     "customDomains": ["yaoi.web.id"]
   }

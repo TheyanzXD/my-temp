@@ -68,7 +68,29 @@ const devStore = new MemoryKVImpl();
 const now = () => Math.floor(Date.now() / 1000);
 
 class D1KVImpl implements MemoryKV {
-	constructor(private db: D1Database) {}
+	private static initPromise: Promise<void> | null = null;
+	private db: D1Database;
+
+	constructor(db: D1Database) {
+		this.db = db;
+		if (!D1KVImpl.initPromise) {
+			D1KVImpl.initPromise = this.bootstrap();
+		}
+	}
+
+	private async bootstrap(): Promise<void> {
+		try {
+			await this.db.batch([
+				this.db.prepare(
+					'CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER, updated INTEGER NOT NULL)'
+				),
+				this.db.prepare('CREATE INDEX IF NOT EXISTS idx_kv_expires ON kv(expires_at)'),
+				this.db.prepare('CREATE INDEX IF NOT EXISTS idx_kv_prefix ON kv(key)')
+			]);
+		} catch {
+			// swallow — first call will surface the real error if even CREATE fails
+		}
+	}
 
 	async get(key: string) {
 		// Lazy expiry: expired rows are invisible here and reaped on writes.
@@ -255,7 +277,14 @@ export async function rateLimitHit(
 	const kv = getRateKV(platform);
 	const key = RATE_KEY(ip);
 	const n = now();
-	const raw = await kv.get(key);
+	let raw: string | null = null;
+	try {
+		raw = await kv.get(key);
+	} catch {
+		// KV binding not initialized (Miniflare cold start with no entry, or quota exhausted).
+		// Treat as fresh state — and we won't try to put() back either, see below.
+		return { allowed: true, remaining: maxRequests, resetTime: n + windowSec };
+	}
 	let entry: { count: number; resetTime: number } = { count: 0, resetTime: n + windowSec };
 
 	if (raw) {
