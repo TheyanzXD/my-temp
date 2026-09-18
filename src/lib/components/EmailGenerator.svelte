@@ -115,7 +115,7 @@
 					>
 						{#each domains as d}
 							<option value={d.domain}>
-								@{d.domain}
+								@{d.domain}{(d as { providerLabel?: string }).providerLabel ? ` · ${(d as { providerLabel?: string }).providerLabel}` : ''}
 							</option>
 						{/each}
 					</select>

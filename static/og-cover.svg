@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="white" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="blob1" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob2" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+
+  <!-- Background gradient -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative blobs -->
+  <circle cx="200" cy="160" r="220" fill="url(#blob1)"/>
+  <circle cx="1000" cy="500" r="280" fill="url(#blob2)"/>
+
+  <!-- Subtle grid overlay -->
+  <g opacity="0.07" stroke="white" stroke-width="1">
+    <line x1="0" y1="105" x2="1200" y2="105"/>
+    <line x1="0" y1="210" x2="1200" y2="210"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="525" x2="1200" y2="525"/>
+    <line x1="150" y1="0" x2="150" y2="630"/>
+    <line x1="300" y1="0" x2="300" y2="630"/>
+    <line x1="450" y1="0" x2="450" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="750" y1="0" x2="750" y2="630"/>
+    <line x1="900" y1="0" x2="900" y2="630"/>
+    <line x1="1050" y1="0" x2="1050" y2="630"/>
+  </g>
+
+  <!-- Mailbox mock card (center stage) -->
+  <g transform="translate(420, 175)">
+    <rect x="0" y="0" width="360" height="280" rx="22" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.18" stroke-width="1"/>
+    <!-- top bar -->
+    <rect x="0" y="0" width="360" height="44" rx="22" fill="white" fill-opacity="0.06"/>
+    <circle cx="22" cy="22" r="6" fill="#ef4444"/>
+    <circle cx="44" cy="22" r="6" fill="#f59e0b"/>
+    <circle cx="66" cy="22" r="6" fill="#22c55e"/>
+    <rect x="120" y="14" width="180" height="16" rx="8" fill="white" fill-opacity="0.07"/>
+    <text x="210" y="26" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="white" fill-opacity="0.55" font-weight="600">temp.yaoi.web.id</text>
+    <!-- inbox area header -->
+    <rect x="20" y="68" width="80" height="10" rx="5" fill="white" fill-opacity="0.32"/>
+    <text x="22" y="118" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="white" fill-opacity="0.7" font-weight="600">@yaoi.web.id</text>
+    <!-- divider -->
+    <line x1="20" y1="130" x2="340" y2="130" stroke="white" stroke-opacity="0.12"/>
+    <!-- message rows -->
+    <g transform="translate(20, 146)">
+      <rect x="0" y="0" width="320" height="36" rx="10" fill="white" fill-opacity="0.07"/>
+      <circle cx="20" cy="18" r="6" fill="#22c55e"/>
+      <text x="36" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="white" fill-opacity="0.8" font-weight="600">GitHub Security</text>
+      <rect x="200" y="14" width="100" height="8" rx="4" fill="white" fill-opacity="0.18"/>
+    </g>
+    <g transform="translate(20, 188)">
+      <rect x="0" y="0" width="320" height="36" rx="10" fill="white" fill-opacity="0.07"/>
+      <circle cx="20" cy="18" r="6" fill="#6366f1"/>
+      <text x="36" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="white" fill-opacity="0.8" font-weight="600">Stripe Receipts</text>
+      <rect x="200" y="14" width="100" height="8" rx="4" fill="white" fill-opacity="0.18"/>
+    </g>
+    <g transform="translate(20, 230)">
+      <rect x="0" y="0" width="320" height="36" rx="10" fill="white" fill-opacity="0.05"/>
+      <circle cx="20" cy="18" r="6" fill="#f472b6"/>
+      <text x="36" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="white" fill-opacity="0.55" font-weight="600">Newsletter Daily</text>
+      <rect x="200" y="14" width="100" height="8" rx="4" fill="white" fill-opacity="0.10"/>
+    </g>
+  </g>
+
+  <!-- Brand wordmark top-left -->
+  <g transform="translate(80, 80)">
+    <rect x="-4" y="0" width="56" height="56" rx="16" fill="white"/>
+    <text x="24" y="38" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28" fill="#6366f1" font-weight="900">Y</text>
+    <text x="68" y="32" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" fill="white" font-weight="800" letter-spacing="-0.5">YanzXD Temp</text>
+    <text x="68" y="52" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="white" fill-opacity="0.55" font-weight="500">Disposable email · Cloudflare Pages</text>
+  </g>
+
+  <!-- Big tagline -->
+  <g transform="translate(80, 470)">
+    <text x="0" y="0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="56" fill="white" font-weight="900" letter-spacing="-1.5">Buat email sekali pakai.</text>
+    <text x="0" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="56" fill="#a5b4fc" font-weight="900" letter-spacing="-1.5">Terima kode verifikasi.</text>
+    <text x="0" y="98" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" fill="white" fill-opacity="0.7" font-weight="500">10+ public providers · realtime · no signup</text>
+  </g>
+
+  <!-- Bottom-right badge -->
+  <g transform="translate(900, 540)">
+    <rect x="0" y="0" width="220" height="44" rx="22" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.18"/>
+    <text x="110" y="28" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" fill="white" font-weight="700" letter-spacing="0.4">temp.yaoi.web.id</text>
+  </g>
+</svg>

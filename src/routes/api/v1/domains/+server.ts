@@ -5,9 +5,12 @@ import { ok, cacheHeaders, err, getIp } from '$lib/server/api/respond';
 
 /**
  * GET /api/v1/domains
- * List advertised domains the API can create mailboxes on.
+ * List advertised domains for the ACTIVE mail provider.
  *
  * Cache: 60s client, 5m edge.
+ *
+ * For the union across all registered providers (with provider attribution
+ * per row), call `GET /api/v1/domains/all` instead.
  */
 export const GET: RequestHandler = async (event) => {
 	const ip = getIp(event);
@@ -18,6 +21,10 @@ export const GET: RequestHandler = async (event) => {
 		const domains = await getDomains(event.platform);
 		return ok({ domains, count: domains.length }, { headers: cacheHeaders.public60 });
 	} catch (e: unknown) {
-		return err('DOMAINS_FETCH_FAILED', e instanceof Error ? e.message : 'Failed to fetch domains', 500);
+		return err(
+			'DOMAINS_FETCH_FAILED',
+			e instanceof Error ? e.message : 'Failed to fetch domains',
+			500
+		);
 	}
 };

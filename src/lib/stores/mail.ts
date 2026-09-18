@@ -160,13 +160,25 @@ function createMailboxStore() {
 
 		fetchDomains: async () => {
 			try {
-				const res = await fetch('/api/v1/domains');
+				const res = await fetch('/api/v1/domains/all');
 				const json = await res.json();
-				if (json.success && json.data.domains) {
+				if (json.success && Array.isArray(json.data.domains)) {
+					// /api/v1/domains/all returns rows enriched with `provider` + `providerLabel`.
+					// The store's DomainInfo type doesn't have those, so we keep them as
+					// unknown extra keys and widen on the UI side via `(d as any).providerLabel`.
 					update((s) => ({ ...s, domains: json.data.domains }));
 				}
 			} catch (err) {
-				console.error('Failed to fetch domains', err);
+				// Fallback to the active-only endpoint if the union endpoint isn't built yet.
+				try {
+					const res = await fetch('/api/v1/domains');
+					const json = await res.json();
+					if (json.success && Array.isArray(json.data.domains)) {
+						update((s) => ({ ...s, domains: json.data.domains }));
+					}
+				} catch {
+					console.error('Failed to fetch domains', err);
+				}
 			}
 		},
 
